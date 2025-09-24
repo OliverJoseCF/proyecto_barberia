@@ -1,34 +1,40 @@
 import gallery1 from "@/assets/corte1.jpg";
 import gallery2 from "@/assets/corte1.jpg";
 import gallery3 from "@/assets/angel.jpg";
+import { Carousel } from "./Carousel";
 
 const Gallery = () => {
-  const galleryItems = [
+  const carouselSlides = [
     {
-      image: gallery1,
+      src: gallery1,
       title: "Corte Moderno",
-      description: "Transformación completa con técnicas avanzadas"
+      button: "Ver Más Trabajos"
     },
     {
-      image: gallery2,
+      src: gallery2,
       title: "Barba Profesional",
-      description: "Definición y estilizado de barba premium"
+      button: "Reservar Cita"
     },
     {
-      image: gallery3,
+      src: gallery3,
       title: "Afeitado Clásico",
-      description: "Experiencia tradicional con navaja"
+      button: "Conocer Servicios"
     },
     {
-      image: gallery3,
-      title: "Afeitado Clásico",
-      description: "Experiencia tradicional con navaja"
+      src: gallery1,
+      title: "Estilo Personalizado",
+      button: "Ver Portfolio"
     },
     {
-      image: gallery1,
-      title: "Corte Moderno",
-      description: "Transformación completa con técnicas avanzadas"
-    },
+
+
+      src: gallery3,
+      title: "Técnicas Avanzadas",
+      button: "Agendar Ahora"
+    }
+    
+
+
   ];
 
   return (
@@ -43,28 +49,10 @@ const Gallery = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {galleryItems.map((item, index) => (
-            <div key={index} className="group relative overflow-hidden rounded-lg bg-card">
-              <div className="aspect-[4/5] overflow-hidden">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-hero-bg/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-elegant">
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <h3 className="font-display text-2xl text-gold mb-2">
-                    {item.title}
-                  </h3>
-                  <p className="font-elegant text-foreground">
-                    {item.description}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="w-full flex justify-center px-2 overflow-x-hidden">
+          <div className="max-w-full">
+            <Carousel slides={carouselSlides} />
+          </div>
         </div>
 
         <div className="text-center mt-12">
