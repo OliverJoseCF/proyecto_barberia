@@ -18,7 +18,23 @@ const Gallery = () => {
       image: gallery3,
       title: "Afeitado Clásico",
       description: "Experiencia tradicional con navaja"
-    }
+    },
+    {
+      image: gallery3,
+      title: "Afeitado Clásico",
+      description: "Experiencia tradicional con navaja"
+    },
+    {
+      image: gallery1,
+      title: "Corte Moderno",
+      description: "Transformación completa con técnicas avanzadas"
+    },
+    {
+      image: gallery1,
+      title: "Corte Moderno",
+      description: "Transformación completa con técnicas avanzadas"
+    },
+  
   ];
 
   return (

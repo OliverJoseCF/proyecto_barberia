@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, Clock, Instagram, Facebook, Twitter } from "lucide-react";
+import { Phone, MapPin, Clock, Instagram, Facebook } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Contact = () => {
   return (
@@ -104,32 +105,55 @@ const Contact = () => {
         {/* Social Media */}
         <div className="mt-16 text-center">
           <h3 className="font-display text-2xl text-gold mb-6">Síguenos en Redes</h3>
-          <div className="flex justify-center space-x-6">
-            <Button 
-              variant="elegant"
-              size="lg" 
-              className="p-4"
-              onClick={() => window.open('https://instagram.com', '_blank')}
-            >
-              <Instagram className="h-6 w-6" />
-            </Button>
-            <Button 
-              variant="elegant"
-              size="lg" 
-              className="p-4"
-              onClick={() => window.open('https://facebook.com', '_blank')}
-            >
-              <Facebook className="h-6 w-6" />
-            </Button>
-            <Button 
-              variant="elegant"
-              size="lg" 
-              className="p-4"
-              onClick={() => window.open('https://twitter.com', '_blank')}
-            >
-              <Twitter className="h-6 w-6" />
-            </Button>
-          </div>
+          <TooltipProvider>
+            <div className="flex justify-center space-x-6">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="elegant"
+                    size="lg" 
+                    className="p-4"
+                    onClick={() => window.open('https://www.facebook.com/Ramirezlpb', '_blank')}
+                  >
+                    <Facebook className="h-6 w-6" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Facebook Angel: Ramirezlpb
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="elegant"
+                    size="lg" 
+                    className="p-4"
+                    onClick={() => window.open('https://www.instagram.com/cantabarba_studio?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==', '_blank')}
+                  >
+                    <Instagram className="h-6 w-6" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Instagram: cantabarba_studio
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="elegant"
+                    size="lg" 
+                    className="p-4"
+                    onClick={() => window.open('https://www.facebook.com/emiliano.vega.1806253', '_blank')}
+                  >
+                    <Facebook className="h-6 w-6" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Facebook Emiliano: emiliano.vega.1806253
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </div>
       </div>
     </section>
