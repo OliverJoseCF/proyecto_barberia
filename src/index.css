@@ -1,0 +1,294 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* CantaBarba Studio Design System */
+    --background: 0 0% 8%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 0 0% 5%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 95%;
+
+    /* Gold accent colors */
+    --gold: 45 96% 65%;
+    --gold-foreground: 0 0% 5%;
+    --gold-muted: 45 55% 45%;
+    --gold-bright: 45 100% 75%;
+    --gold-shimmer: 50 100% 80%;
+
+    /* Barbershop specific colors */
+    --hero-bg: 0 0% 5%;
+    --section-bg: 0 0% 10%;
+    --elegant-border: 0 0% 25%;
+
+    /* Glow and reflection colors */
+    --glow-primary: 45 100% 70%;
+    --glow-secondary: 45 80% 60%;
+    --reflection-light: 0 0% 100%;
+    --shimmer-base: 45 90% 85%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 0 0% 25%;
+    --input: 0 0% 15%;
+    --ring: 45 96% 65%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark mode uses same elegant theme */
+    --background: 0 0% 5%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 3%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 70%;
+
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 98%;
+
+    --gold: 45 96% 70%;
+    --gold-foreground: 0 0% 3%;
+    --gold-muted: 45 65% 50%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 12%;
+    --ring: 45 96% 70%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* CantaBarba Typography */
+  .font-display {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+  }
+
+  .font-elegant {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+  }
+
+  /* Smooth animations */
+  .transition-elegant {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Gold gradient for premium elements */
+  .gradient-gold {
+    background: linear-gradient(135deg, hsl(var(--gold)), hsl(var(--gold-muted)));
+  }
+
+  /* Enhanced gold gradient with shimmer */
+  .gradient-gold-shimmer {
+    background: linear-gradient(135deg, 
+      hsl(var(--gold)), 
+      hsl(var(--gold-bright)), 
+      hsl(var(--gold-shimmer)), 
+      hsl(var(--gold-muted))
+    );
+    background-size: 200% 200%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  /* Glow effects */
+  .glow-soft {
+    box-shadow: 
+      0 0 20px hsl(var(--glow-primary) / 0.3),
+      0 0 40px hsl(var(--glow-primary) / 0.2),
+      0 0 80px hsl(var(--glow-primary) / 0.1);
+  }
+
+  .glow-intense {
+    box-shadow: 
+      0 0 30px hsl(var(--glow-primary) / 0.5),
+      0 0 60px hsl(var(--glow-primary) / 0.3),
+      0 0 90px hsl(var(--glow-primary) / 0.2),
+      inset 0 1px 0 hsl(var(--reflection-light) / 0.1);
+  }
+
+  /* Text glow - reduced intensity */
+  .text-glow {
+    text-shadow: 
+      0 0 5px hsl(var(--gold) / 0.4),
+      0 0 10px hsl(var(--gold) / 0.3),
+      0 0 15px hsl(var(--gold) / 0.2);
+  }
+
+  /* Enhanced transparency effects */
+  .transparency-light {
+    background: hsl(var(--background) / 0.6);
+    backdrop-filter: blur(10px);
+  }
+
+  .transparency-medium {
+    background: hsl(var(--background) / 0.4);
+    backdrop-filter: blur(15px);
+  }
+
+  .transparency-heavy {
+    background: hsl(var(--background) / 0.2);
+    backdrop-filter: blur(20px);
+  }
+
+  /* Button transparency effects */
+  .btn-glass {
+    background: hsl(var(--gold) / 0.1);
+    border: 1px solid hsl(var(--gold) / 0.3);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-glass:hover {
+    background: hsl(var(--gold) / 0.2);
+    border-color: hsl(var(--gold) / 0.5);
+    box-shadow: 0 0 20px hsl(var(--gold) / 0.3);
+  }
+
+  /* Glass effect for cards with enhanced reflections */
+  .glass-effect {
+    backdrop-filter: blur(20px);
+    background: hsl(var(--card) / 0.8);
+    border: 1px solid hsl(var(--elegant-border) / 0.3);
+    position: relative;
+  }
+
+  .glass-effect::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+      transparent, 
+      hsl(var(--reflection-light) / 0.2), 
+      transparent
+    );
+  }
+
+  /* Reflection effects */
+  .reflection-top {
+    position: relative;
+  }
+
+  .reflection-top::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, 
+      hsl(var(--reflection-light) / 0.1) 0%, 
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Fade effects */
+  .fade-in-up {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.8s ease-out forwards;
+  }
+
+  /* Animación keyframes */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+  .fade-edge-bottom {
+    position: relative;
+  }
+
+  .fade-edge-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(180deg, 
+      transparent 0%, 
+      hsl(var(--background)) 100%
+    );
+    pointer-events: none;
+  }
+}
