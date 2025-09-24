@@ -29,12 +29,6 @@ const Gallery = () => {
       title: "Corte Moderno",
       description: "Transformación completa con técnicas avanzadas"
     },
-    {
-      image: gallery1,
-      title: "Corte Moderno",
-      description: "Transformación completa con técnicas avanzadas"
-    },
-  
   ];
 
   return (
