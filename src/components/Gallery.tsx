@@ -1,6 +1,6 @@
 import gallery1 from "@/assets/corte1.jpg";
 import gallery2 from "@/assets/corte1.jpg";
-import gallery3 from "@/assets/corte1.jpg";
+import gallery3 from "@/assets/angel.jpg";
 
 const Gallery = () => {
   const galleryItems = [
