@@ -6,15 +6,36 @@ import logoImage from "@/assets/logo.png";
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [show, setShow] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>("inicio");
   useEffect(() => {
     setTimeout(() => setShow(true), 100);
+
+    // Escucha scroll para detectar sección activa
+    const handleScroll = () => {
+      const sectionIds = navItems.map(item => item.href.replace('#', ''));
+      let current = sectionIds[0];
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 120 && rect.bottom > 120) {
+            current = id;
+            break;
+          }
+        }
+      }
+      setActiveSection(current);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const navItems = [
     { name: "Inicio", href: "#inicio" },
     { name: "Servicios", href: "#servicios" },
     { name: "Galería", href: "#galeria" },
-    { name: "El Equipo", href: "#equipo" },
+    { name: "Equipo", href: "#equipo" },
     { name: "Contacto", href: "#contacto" },
     { name: "Reservas", href: "#reservas" },
   ];
@@ -51,16 +72,22 @@ const Navigation = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              {navItems.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="font-elegant text-foreground hover:text-gold transition-elegant px-3 py-2 text-sm"
-                  onClick={(e) => handleNavClick(e, item.href)}
-                >
-                  {item.name}
-                </a>
-              ))}
+              {navItems.map((item) => {
+                const isActive = activeSection === item.href.replace('#', '');
+                return (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className={`font-elegant relative px-3 py-1 text-base rounded-md border border-transparent transition-all duration-150 after:absolute after:left-1/2 after:-translate-x-1/2 after:bottom-0 after:w-0 after:h-[2px] after:bg-gold after:rounded-full after:transition-all after:duration-200 hover:text-gold focus:text-gold active:text-gold hover:after:w-2/3 hover:after:opacity-100 after:opacity-0 ${isActive ? 'text-gold after:w-2/3 after:opacity-100' : 'text-foreground'}`}
+                    onClick={(e) => handleNavClick(e, item.href)}
+                    style={{overflow: 'visible'}}
+                  >
+                    <span className="relative z-10 font-medium tracking-wide">
+                      {item.name}
+                    </span>
+                  </a>
+                );
+              })}
             </div>
           </div>
 
@@ -81,16 +108,22 @@ const Navigation = () => {
         {isOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              {navItems.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="font-elegant text-foreground hover:text-gold block px-3 py-2 text-base transition-elegant"
-                  onClick={(e) => handleNavClick(e, item.href)}
-                >
-                  {item.name}
-                </a>
-              ))}
+              {navItems.map((item) => {
+                const isActive = activeSection === item.href.replace('#', '');
+                return (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className={`font-elegant relative block px-3 py-2 text-base rounded-md border border-transparent transition-all duration-150 mb-2 after:absolute after:left-1/2 after:-translate-x-1/2 after:bottom-0 after:w-0 after:h-[2px] after:bg-gold after:rounded-full after:transition-all after:duration-200 hover:text-gold focus:text-gold active:text-gold hover:after:w-2/3 hover:after:opacity-100 after:opacity-0 ${isActive ? 'text-gold after:w-2/3 after:opacity-100' : 'text-foreground'}`}
+                    onClick={(e) => handleNavClick(e, item.href)}
+                    style={{overflow: 'visible'}}
+                  >
+                    <span className="relative z-10 font-medium tracking-wide">
+                      {item.name}
+                    </span>
+                  </a>
+                );
+              })}
             </div>
           </div>
         )}

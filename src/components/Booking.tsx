@@ -249,7 +249,7 @@ const Booking = () => {
               <Button 
                 type="submit" 
                 variant="premium"
-                className={`w-full font-elegant text-lg py-3 flex items-center justify-center transition-all duration-300 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-full font-elegant text-lg py-3 flex items-center justify-center transition-all duration-300 hover:scale-[1.045] focus:scale-[1.045] active:scale-95 ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 disabled={loading}
               >
                 {loading && <span className="loader mr-2 animate-spin" aria-label="Cargando"></span>}

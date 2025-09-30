@@ -61,7 +61,7 @@ const Hero = () => {
           <Button 
             variant="default" 
             size="lg" 
-            className="gradient-gold text-gold-foreground hover:opacity-90 transition-elegant font-elegant text-lg px-8 py-3"
+            className="gradient-gold text-gold-foreground hover:opacity-90 transition-elegant font-elegant text-lg px-8 py-3 hover:scale-[1.045] focus:scale-[1.045] active:scale-95"
             onClick={() => document.getElementById('reservas')?.scrollIntoView({ behavior: 'smooth' })}
           >
             Reservar Cita
@@ -69,7 +69,7 @@ const Hero = () => {
           <Button 
             variant="outline" 
             size="lg" 
-            className="border-gold text-gold hover:bg-gold hover:text-gold-foreground transition-elegant font-elegant text-lg px-8 py-3"
+            className="border-gold text-gold hover:bg-gold hover:text-gold-foreground transition-elegant font-elegant text-lg px-8 py-3 hover:scale-[1.045] focus:scale-[1.045] active:scale-95"
             onClick={() => document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth' })}
           >
             Ver Servicios

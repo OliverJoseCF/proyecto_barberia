@@ -51,7 +51,7 @@ const Contact = () => {
                 <Button 
                   variant="elegant"
                   size="sm" 
-                  className="mt-3"
+                  className="mt-3 hover:scale-[1.045] focus:scale-[1.045] active:scale-95 transition-transform"
                   onClick={() => window.open('https://maps.app.goo.gl/aivgyU38bAkj2f6YA', '_blank')}
                 >
                   Ver en Google Maps
@@ -112,7 +112,7 @@ const Contact = () => {
                   <Button 
                     variant="elegant"
                     size="lg" 
-                    className="p-4"
+                    className="p-4 hover:scale-[1.13] focus:scale-[1.13] active:scale-95 transition-transform"
                     onClick={() => window.open('https://www.facebook.com/Ramirezlpb', '_blank')}
                   >
                     <Facebook className="h-6 w-6" />
@@ -127,7 +127,7 @@ const Contact = () => {
                   <Button 
                     variant="elegant"
                     size="lg" 
-                    className="p-4"
+                    className="p-4 hover:scale-[1.13] focus:scale-[1.13] active:scale-95 transition-transform"
                     onClick={() => window.open('https://www.instagram.com/cantabarba_studio?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==', '_blank')}
                   >
                     <Instagram className="h-6 w-6" />
@@ -142,7 +142,7 @@ const Contact = () => {
                   <Button 
                     variant="elegant"
                     size="lg" 
-                    className="p-4"
+                    className="p-4 hover:scale-[1.13] focus:scale-[1.13] active:scale-95 transition-transform"
                     onClick={() => window.open('https://www.facebook.com/emiliano.vega.1806253', '_blank')}
                   >
                     <Facebook className="h-6 w-6" />

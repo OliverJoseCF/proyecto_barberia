@@ -112,7 +112,7 @@ const Services = () => {
                 </p>
                 <Button 
                   variant="elegant"
-                  className="w-full font-elegant"
+                  className="w-full font-elegant hover:scale-[1.045] focus:scale-[1.045] active:scale-95 transition-transform"
                   onClick={() => {
                     const bookingSection = document.getElementById('reservas');
                     if (bookingSection) {
