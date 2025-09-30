@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import logoImage from "@/assets/logo.png";
+import LetterSwapForward from "./letter-swap-forward-anim";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,7 +59,11 @@ const Navigation = () => {
                   className="font-elegant text-foreground hover:text-gold transition-elegant px-3 py-2 text-sm"
                   onClick={(e) => handleNavClick(e, item.href)}
                 >
-                  {item.name}
+                  <LetterSwapForward 
+                    label={item.name}
+                    staggerFrom={"center"}
+            className="mono"
+                  />
                 </a>
               ))}
             </div>
@@ -88,7 +93,11 @@ const Navigation = () => {
                   className="font-elegant text-foreground hover:text-gold block px-3 py-2 text-base transition-elegant"
                   onClick={(e) => handleNavClick(e, item.href)}
                 >
-                  {item.name}
+                  <LetterSwapForward 
+                    label={item.name}
+                    reverse={false}
+                    className="font-bold"
+                  />
                 </a>
               ))}
             </div>

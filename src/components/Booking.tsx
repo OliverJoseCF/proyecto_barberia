@@ -9,6 +9,7 @@ import { Calendar, Clock, User, Phone, Scissors } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { SERVICIOS, BARBEROS, HORARIOS } from "@/constants/bookingOptions";
+import DotGrid from "./DotGrid";
 
 
 const Booking = () => {
@@ -98,8 +99,25 @@ const Booking = () => {
     }
   };
   return (
-    <section id="reservas" className="py-24 bg-background/85 backdrop-blur-sm">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="reservas" className="py-24 relative overflow-hidden">
+      {/* DotGrid Background */}
+      <div className="absolute inset-0 opacity-15">
+        <DotGrid 
+          dotSize={8}
+          gap={24}
+          baseColor="#D4AF37"
+          activeColor="#F5E6A8"
+          proximity={120}
+          speedTrigger={80}
+          shockRadius={200}
+          shockStrength={3}
+          className="w-full h-full"
+        />
+      </div>
+      
+      {/* Content overlay */}
+      <div className="relative z-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="font-display text-4xl md:text-5xl mb-6 gradient-gold bg-clip-text text-transparent text-glow leading-relaxed overflow-visible pb-2">
             Reserva tu Cita
@@ -109,7 +127,7 @@ const Booking = () => {
           </p>
         </div>
 
-        <Card className="glass-effect max-w-2xl mx-auto">
+        <Card className="glass-effect max-w-2xl mx-auto bg-card/40 backdrop-blur-md border-gold/20">
           <CardHeader className="text-center">
             <CardTitle className="font-display text-2xl text-gold flex items-center justify-center space-x-2">
               <Scissors className="h-6 w-6" />
@@ -134,7 +152,16 @@ const Booking = () => {
                     aria-describedby="error-nombre"
                     onChange={(e) => {
                       const value = e.target.value;
-                      setFormData({ ...formData, nombre: value });
+                      // Solo permitir letras, espacios y caracteres con acentos
+                      if (/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(value)) {
+                        setFormData({ ...formData, nombre: value });
+                      }
+                    }}
+                    onKeyPress={(e) => {
+                      // Bloquear caracteres que no sean letras o espacios
+                      if (!/[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/.test(e.key)) {
+                        e.preventDefault();
+                      }
                     }}
                     placeholder="Tu nombre completo"
                     className="font-elegant bg-background border-elegant-border/50 focus:border-gold"
@@ -158,7 +185,16 @@ const Booking = () => {
                     aria-describedby="error-telefono"
                     onChange={(e) => {
                       const value = e.target.value;
-                      setFormData({ ...formData, telefono: value });
+                      // Solo permitir números
+                      if (/^\d*$/.test(value) && value.length <= 10) {
+                        setFormData({ ...formData, telefono: value });
+                      }
+                    }}
+                    onKeyPress={(e) => {
+                      // Bloquear caracteres que no sean números
+                      if (!/\d/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+                        e.preventDefault();
+                      }
                     }}
                     placeholder="Tu número de teléfono"
                     className="font-elegant bg-background border-elegant-border/50 focus:border-gold"
@@ -262,6 +298,7 @@ const Booking = () => {
             </form>
           </CardContent>
         </Card>
+        </div>
       </div>
     </section>
   );
