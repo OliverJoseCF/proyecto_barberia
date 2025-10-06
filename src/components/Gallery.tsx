@@ -16,7 +16,7 @@ const Gallery = () => {
 	const carouselSlides = [
 		{
 			src: gallery1,
-			title: "Corte Moderno",
+			title: "Corte Gey",
 			button: "Ver Más Trabajos"
 		},
 		{
