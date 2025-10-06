@@ -1,39 +1,55 @@
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/fondochido1.jpg";
 
 const Hero = () => {
   const [show, setShow] = useState(false);
+
+  // Memoizar funciones de navegación
+  const scrollToReservas = useCallback(() => {
+    document.getElementById('reservas')?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  const scrollToGaleria = useCallback(() => {
+    document.getElementById('galeria')?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
   useEffect(() => {
     // Desactivar restauración automática del scroll
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
 
-    setTimeout(() => setShow(true), 100);
+    const timer = setTimeout(() => setShow(true), 100);
 
     // Scroll inmediato al Hero
     const heroSection = document.getElementById('inicio');
     if (heroSection) {
       heroSection.scrollIntoView({ behavior: 'auto' });
     }
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <section id="inicio" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
+      {/* Background Image con loading optimizado */}
       <div
-        className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-[1800ms] ease-out
+        className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-[1800ms] ease-out will-change-transform
         ${show ? 'opacity-100 blur-0 scale-100' : 'opacity-0 blur-sm scale-105'}`}
-        style={{ backgroundImage: `url(${heroImage})` }}
+        style={{ 
+          backgroundImage: `url(${heroImage})`,
+          backgroundAttachment: 'fixed' // Parallax effect
+        }}
+        role="img"
+        aria-label="Hero background - Barbershop interior"
       >
         <div className="absolute inset-0 bg-gradient-to-r from-hero-bg/90 via-hero-bg/70 to-hero-bg/50"></div>
       </div>
 
       {/* Content */}
       <div
-        className={`relative z-10 text-center max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-1000 ease-out
+        className={`relative z-10 text-center max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-1000 ease-out will-change-transform
         ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
       >
         <h1
@@ -62,7 +78,8 @@ const Hero = () => {
             variant="default" 
             size="lg" 
             className="gradient-gold text-gold-foreground hover:opacity-90 transition-elegant font-elegant text-lg px-8 py-3 hover:scale-[1.045] focus:scale-[1.045] active:scale-95"
-            onClick={() => document.getElementById('reservas')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={scrollToReservas}
+            aria-label="Ir a la sección de reservas"
           >
             Reservar Cita
           </Button>
@@ -70,17 +87,11 @@ const Hero = () => {
             variant="outline" 
             size="lg" 
             className="border-gold text-gold hover:bg-gold hover:text-gold-foreground transition-elegant font-elegant text-lg px-8 py-3 hover:scale-[1.045] focus:scale-[1.045] active:scale-95"
-            onClick={() => document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={scrollToGaleria}
+            aria-label="Ir a la galería"
           >
-            Ver Servicios
+            Ver Galería
           </Button>
-        </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-gold animate-bounce">
-        <div className="w-6 h-10 border-2 border-gold rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-gold rounded-full mt-2 animate-pulse"></div>
         </div>
       </div>
     </section>

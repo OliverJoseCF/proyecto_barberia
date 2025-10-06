@@ -1,6 +1,6 @@
 "use client";
 import { ArrowRight } from "lucide-react";
-import { useState, useRef, useId, useEffect } from "react";
+import { useState, useRef, useId, useEffect, useCallback } from "react";
 
 interface SlideData {
   title: string;

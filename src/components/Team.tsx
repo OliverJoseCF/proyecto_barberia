@@ -4,6 +4,7 @@ import angelImage from "@/assets/angel.jpg";
 import marcoImage from "@/assets/emiliano.jpg";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { CardContainer, CardBody, CardItem } from "@/components/3d-card";
 
 const Team = () => {
 	const { ref, inView } = useInView({
@@ -35,7 +36,7 @@ const Team = () => {
 	return (
 		<section id="equipo" className="py-24 bg-section-bg/80 backdrop-blur-sm" ref={ref}>
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div className="text-center mb-16">
+				<div className="text-center mb-0">
 					<motion.h2 
 						initial={{ opacity: 0, x: -50 }}
 						animate={inView ? { opacity: 1, x: 0 } : {}}
@@ -64,61 +65,88 @@ const Team = () => {
 								ease: "easeOut"
 							}}
 						>
-							<Card className="glass-effect hover:border-gold/50 transition-elegant group">
-								<CardHeader className="text-center">
-									<motion.div 
-										className="mx-auto w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-gold/30"
-										whileHover={{ scale: 1.1 }}
-										transition={{ duration: 0.3, ease: "easeOut" }}
+							<CardContainer className="inter-var py-0">
+								<CardBody className="relative group/card hover:shadow-2xl hover:shadow-gold/[0.1] bg-black/40 border-elegant-border/30 w-auto sm:w-[30rem] h-auto rounded-xl p-6 border min-h-0">
+									<CardItem
+										translateZ="50"
+										className="text-center w-full"
 									>
-										<img 
-											src={member.image} 
-											alt={`${member.name} - ${member.title}`}
-											className="w-full h-full object-cover"
-										/>
-									</motion.div>
-									<CardTitle className="font-display text-2xl text-foreground mb-2">
-										{member.name}
-									</CardTitle>
-									<CardDescription className="font-elegant text-gold text-lg mb-2">
-										{member.title}
-									</CardDescription>
-									<p className="font-elegant text-gold italic text-sm">
-										"{member.slogan}"
-									</p>
-								</CardHeader>
-								<CardContent className="space-y-4">
-									<div className="space-y-3">
-										<div className="flex items-start space-x-3">
-											<Heart className="h-5 w-5 text-gold mt-0.5 flex-shrink-0" />
-											<div>
-												<p className="font-elegant font-semibold text-foreground text-sm">Especialización</p>
-												<p className="font-elegant text-muted-foreground text-sm">{member.specialization}</p>
+										<motion.div 
+											className="mx-auto w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-gold/30"
+											whileHover={{ scale: 1.1 }}
+											transition={{ duration: 0.3, ease: "easeOut" }}
+										>
+											<img 
+												src={member.image} 
+												alt={`${member.name} - ${member.title}`}
+												className="w-full h-full object-cover"
+											/>
+										</motion.div>
+									</CardItem>
+									
+									<CardItem
+										translateZ="60"
+										className="text-center w-full"
+									>
+										<h3 className="font-display text-2xl text-foreground mb-2">
+											{member.name}
+										</h3>
+									</CardItem>
+									
+									<CardItem
+										translateZ="40"
+										className="text-center w-full mb-2"
+									>
+										<p className="font-elegant text-gold text-lg">
+											{member.title}
+										</p>
+									</CardItem>
+									
+									<CardItem
+										translateZ="30"
+										className="text-center w-full mb-6"
+									>
+										<p className="font-elegant text-gold italic text-sm">
+											"{member.slogan}"
+										</p>
+									</CardItem>
+									
+									<CardItem
+										translateZ="80"
+										className="w-full space-y-4"
+									>
+										<div className="space-y-3">
+											<div className="flex items-start space-x-3">
+												<Heart className="h-5 w-5 text-gold mt-0.5 flex-shrink-0" />
+												<div>
+													<p className="font-elegant font-semibold text-foreground text-sm">Especialización</p>
+													<p className="font-elegant text-muted-foreground text-sm">{member.specialization}</p>
+												</div>
+											</div>
+											
+											<div className="flex items-start space-x-3">
+												<Star className="h-5 w-5 text-gold mt-0.5 flex-shrink-0" />
+												<div>
+													<p className="font-elegant font-semibold text-foreground text-sm">Experiencia</p>
+													<p className="font-elegant text-muted-foreground text-sm">{member.experience}</p>
+												</div>
 											</div>
 										</div>
 										
-										<div className="flex items-start space-x-3">
-											<Star className="h-5 w-5 text-gold mt-0.5 flex-shrink-0" />
-											<div>
-												<p className="font-elegant font-semibold text-foreground text-sm">Experiencia</p>
-												<p className="font-elegant text-muted-foreground text-sm">{member.experience}</p>
-											</div>
+										<div className="pt-4 border-t border-elegant-border/30">
+											<p className="font-elegant text-muted-foreground text-sm leading-relaxed">
+												{member.personality}
+											</p>
 										</div>
-									</div>
-									
-									<div className="pt-4 border-t border-elegant-border/30">
-										<p className="font-elegant text-muted-foreground text-sm leading-relaxed">
-											{member.personality}
-										</p>
-									</div>
-								</CardContent>
-							</Card>
+									</CardItem>
+								</CardBody>
+							</CardContainer>
 						</motion.div>
 					))}
 				</div>
 
 				<motion.div 
-					className="text-center mt-16"
+					className="text-center mt-0"
 					initial={{ opacity: 0, y: 30 }}
 					animate={inView ? { opacity: 1, y: 0 } : {}}
 					transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}

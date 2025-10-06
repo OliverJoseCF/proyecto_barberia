@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import logoImage from "@/assets/logo.png";
@@ -11,28 +11,43 @@ const Navigation = () => {
   const [isScrolling, setIsScrolling] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  useEffect(() => {
-    setTimeout(() => setShow(true), 100);
 
-    // Escucha scroll para detectar sección activa
-    const handleScroll = () => {
-      const sectionIds = navItems.map(item => item.href.replace('#', ''));
-      let current = sectionIds[0];
-      for (const id of sectionIds) {
-        const el = document.getElementById(id);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top <= 120 && rect.bottom > 120) {
-            current = id;
-            break;
-          }
-        }
-      }
-      setActiveSection(current);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+  // Memoizar navItems para evitar recreación
+  const navItems = useMemo(() => [
+    { name: "Inicio", href: "#inicio" },
+    { name: "Servicios", href: "#servicios" },
+    { name: "Galería", href: "#galeria" },
+    { name: "Equipo", href: "#equipo" },
+    { name: "Contacto", href: "#contacto" },
+    { name: "Reservas", href: "#reservas" },
+  ], []);
+
+  // Memoizar handleNavClick
+  const handleNavClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    const id = href.replace('#', '');
+    const section = document.getElementById(id);
+    if (section) {
+      // 1. PRIMERO: Bloquear el observer
+      setIsScrolling(true);
+      
+      // 2. SEGUNDO: Cambiar la sección activa inmediatamente
+      setActiveSection(id);
+      
+      // 3. TERCERO: Hacer el scroll
+      section.scrollIntoView({ behavior: 'smooth' });
+      
+      // 4. CUARTO: Desbloquear el observer después de que termine el scroll
+      setTimeout(() => {
+        setIsScrolling(false);
+      }, 1200);
+    }
+    setIsOpen(false);
+  }, []);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setShow(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   // Detectar dirección del scroll
@@ -40,15 +55,12 @@ const Navigation = () => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      // Si estamos en el tope de la página, siempre mostrar
       if (currentScrollY < 10) {
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scroll hacia abajo - ocultar
         setIsVisible(false);
-        setIsOpen(false); // Cerrar menú móvil si está abierto
+        setIsOpen(false);
       } else if (currentScrollY < lastScrollY) {
-        // Scroll hacia arriba - mostrar
         setIsVisible(true);
       }
       
@@ -56,10 +68,7 @@ const Navigation = () => {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
   // Detectar la sección visible
@@ -73,14 +82,15 @@ const Navigation = () => {
     };
 
     const observer = new IntersectionObserver((entries) => {
-      // Solo actualizar si no estamos en medio de un scroll programático
-      if (!isScrolling) {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
-        });
+      if (isScrolling) {
+        return;
       }
+      
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
     }, observerOptions);
 
     sections.forEach((section) => observer.observe(section));
@@ -89,35 +99,6 @@ const Navigation = () => {
       sections.forEach((section) => observer.unobserve(section));
     };
   }, [isScrolling]);
-
-  const navItems = [
-    { name: "Inicio", href: "#inicio" },
-    { name: "Servicios", href: "#servicios" },
-    { name: "Galería", href: "#galeria" },
-    { name: "Equipo", href: "#equipo" },
-    { name: "Contacto", href: "#contacto" },
-    { name: "Reservas", href: "#reservas" },
-  ];
-
-  // Scroll suave a la sección
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    const id = href.replace('#', '');
-    const section = document.getElementById(id);
-    if (section) {
-      // Marcar como activo inmediatamente y bloquear el observer
-      setActiveSection(id);
-      setIsScrolling(true);
-      
-      section.scrollIntoView({ behavior: 'smooth' });
-      
-      // Reactivar el observer después de que termine el scroll (aproximadamente 1 segundo)
-      setTimeout(() => {
-        setIsScrolling(false);
-      }, 1000);
-    }
-    setIsOpen(false); // Cierra el menú móvil si está abierto
-  };
 
   return (
     <nav className={`fixed top-0 w-full z-50 glass-effect border-b border-elegant-border/30 bg-background/70 backdrop-blur-lg transition-all duration-300 ease-in-out ${
