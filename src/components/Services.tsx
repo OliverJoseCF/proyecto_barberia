@@ -1,8 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Scissors, Sparkles, Zap, Palette, Star, Eye, ShoppingBag, Heart } from "lucide-react";
+import { motion } from "framer-motion";
+import { useInView } from "react-intersection-observer";
 
 const Services = () => {
+  const { ref, inView } = useInView({
+    triggerOnce: true,
+    threshold: 0.1,
+  });
+
   const services = [
     {
       icon: <Scissors className="h-8 w-8" />,
@@ -70,19 +77,54 @@ const Services = () => {
     }
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0, filter: 'blur(5px)' },
+    visible: {
+      y: 0,
+      opacity: 1,
+      filter: 'blur(0px)',
+      transition: {
+        duration: 0.8,
+      },
+    },
+  };
+
   return (
-    <section id="servicios" className="py-24 bg-section-bg/80 backdrop-blur-sm">
+    <section id="servicios" className="py-24 bg-section-bg/80 backdrop-blur-sm" ref={ref}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="font-display text-4xl md:text-5xl mb-6 gradient-gold bg-clip-text text-transparent text-glow leading-relaxed overflow-visible pb-2">
+          <motion.h2 
+            initial={{ opacity: 0, y: -20 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6 }}
+            className="font-display text-4xl md:text-5xl mb-6 gradient-gold bg-clip-text text-transparent text-glow leading-relaxed overflow-visible pb-2">
             Nuestros Servicios
-          </h2>
-          <p className="font-elegant text-xl text-muted-foreground max-w-2xl mx-auto">
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0, y: -20 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="font-elegant text-xl text-muted-foreground max-w-2xl mx-auto">
             Servicios premium diseñados para realzar tu estilo y personalidad
-          </p>
+          </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate={inView ? "visible" : "hidden"}
+        >
           {services.map((service, index) => (
             <Card key={index} className="glass-effect hover:border-gold/50 hover:glow-soft transition-elegant group bg-card/60 backdrop-blur-md">
               <CardHeader className="text-center">
@@ -112,7 +154,7 @@ const Services = () => {
                 </p>
                 <Button 
                   variant="elegant"
-                  className="w-full font-elegant hover:scale-[1.045] focus:scale-[1.045] active:scale-95 transition-transform"
+                  className="w-full font-elegant"
                   onClick={() => {
                     const bookingSection = document.getElementById('reservas');
                     if (bookingSection) {
@@ -125,7 +167,7 @@ const Services = () => {
               </CardContent>
             </Card>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

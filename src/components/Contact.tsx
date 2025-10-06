@@ -2,8 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, Clock, Instagram, Facebook } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { motion } from "framer-motion";
+import { useInView } from "react-intersection-observer";
 
 const Contact = () => {
+  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.2 });
   return (
     <section id="contacto" className="py-24 bg-background/85 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,7 +54,7 @@ const Contact = () => {
                 <Button 
                   variant="elegant"
                   size="sm" 
-                  className="mt-3 hover:scale-[1.045] focus:scale-[1.045] active:scale-95 transition-transform"
+                  className="mt-3"
                   onClick={() => window.open('https://maps.app.goo.gl/aivgyU38bAkj2f6YA', '_blank')}
                 >
                   Ver en Google Maps
@@ -84,7 +87,17 @@ const Contact = () => {
           </div>
 
           {/* Interactive Map */}
-          <div className="lg:col-span-2">
+          <motion.div 
+            ref={ref}
+            className="lg:col-span-2"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={inView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ 
+              duration: 0.6, 
+              delay: 0.3,
+              ease: "easeOut"
+            }}
+          >
             <Card className="glass-effect h-full">
               <CardContent className="p-0 h-full min-h-[400px]">
                 <iframe
@@ -99,8 +112,8 @@ const Contact = () => {
                 />
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </motion.div>
+				</div>
 
         {/* Social Media */}
         <div className="mt-16 text-center">
@@ -112,7 +125,7 @@ const Contact = () => {
                   <Button 
                     variant="elegant"
                     size="lg" 
-                    className="p-4 hover:scale-[1.13] focus:scale-[1.13] active:scale-95 transition-transform"
+                    className="p-4"
                     onClick={() => window.open('https://www.facebook.com/Ramirezlpb', '_blank')}
                   >
                     <Facebook className="h-6 w-6" />
@@ -127,7 +140,7 @@ const Contact = () => {
                   <Button 
                     variant="elegant"
                     size="lg" 
-                    className="p-4 hover:scale-[1.13] focus:scale-[1.13] active:scale-95 transition-transform"
+                    className="p-4"
                     onClick={() => window.open('https://www.instagram.com/cantabarba_studio?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==', '_blank')}
                   >
                     <Instagram className="h-6 w-6" />
@@ -142,7 +155,7 @@ const Contact = () => {
                   <Button 
                     variant="elegant"
                     size="lg" 
-                    className="p-4 hover:scale-[1.13] focus:scale-[1.13] active:scale-95 transition-transform"
+                    className="p-4"
                     onClick={() => window.open('https://www.facebook.com/emiliano.vega.1806253', '_blank')}
                   >
                     <Facebook className="h-6 w-6" />
