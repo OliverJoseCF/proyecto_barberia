@@ -7,9 +7,69 @@ import LetterSwapForward from "./letter-swap-forward-anim";
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [show, setShow] = useState(false);
+  const [activeSection, setActiveSection] = useState("inicio");
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
   useEffect(() => {
     setTimeout(() => setShow(true), 100);
   }, []);
+
+  // Detectar dirección del scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Si estamos en el tope de la página, siempre mostrar
+      if (currentScrollY < 10) {
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scroll hacia abajo - ocultar
+        setIsVisible(false);
+        setIsOpen(false); // Cerrar menú móvil si está abierto
+      } else if (currentScrollY < lastScrollY) {
+        // Scroll hacia arriba - mostrar
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [lastScrollY]);
+
+  // Detectar la sección visible
+  useEffect(() => {
+    const sections = document.querySelectorAll("section[id]");
+    
+    const observerOptions = {
+      root: null,
+      rootMargin: "-20% 0px -70% 0px",
+      threshold: 0,
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      // Solo actualizar si no estamos en medio de un scroll programático
+      if (!isScrolling) {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      }
+    }, observerOptions);
+
+    sections.forEach((section) => observer.observe(section));
+
+    return () => {
+      sections.forEach((section) => observer.unobserve(section));
+    };
+  }, [isScrolling]);
 
   const navItems = [
     { name: "Inicio", href: "#inicio" },
@@ -26,13 +86,26 @@ const Navigation = () => {
     const id = href.replace('#', '');
     const section = document.getElementById(id);
     if (section) {
+      // Marcar como activo inmediatamente y bloquear el observer
+      setActiveSection(id);
+      setIsScrolling(true);
+      
       section.scrollIntoView({ behavior: 'smooth' });
+      
+      // Reactivar el observer después de que termine el scroll (aproximadamente 1 segundo)
+      setTimeout(() => {
+        setIsScrolling(false);
+      }, 1000);
     }
     setIsOpen(false); // Cierra el menú móvil si está abierto
   };
 
   return (
-    <nav className={`fixed top-0 w-full z-50 glass-effect border-b border-elegant-border/30 bg-background/70 backdrop-blur-lg transition-opacity duration-1000 ease-out ${show ? 'opacity-100' : 'opacity-0'}`}>
+    <nav className={`fixed top-0 w-full z-50 glass-effect border-b border-elegant-border/30 bg-background/70 backdrop-blur-lg transition-all duration-300 ease-in-out ${
+      show ? 'opacity-100' : 'opacity-0'
+    } ${
+      isVisible ? 'translate-y-0' : '-translate-y-full'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -52,20 +125,30 @@ const Navigation = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              {navItems.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="font-elegant text-foreground hover:text-gold transition-elegant px-3 py-2 text-sm"
-                  onClick={(e) => handleNavClick(e, item.href)}
-                >
-                  <LetterSwapForward 
-                    label={item.name}
-                    staggerFrom={"center"}
-            className="mono"
-                  />
-                </a>
-              ))}
+              {navItems.map((item) => {
+                const isActive = activeSection === item.href.replace('#', '');
+                return (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className={`font-elegant transition-elegant px-3 py-2 text-sm relative ${
+                      isActive 
+                        ? 'text-gold' 
+                        : 'text-foreground hover:text-gold'
+                    }`}
+                    onClick={(e) => handleNavClick(e, item.href)}
+                  >
+                    <LetterSwapForward 
+                      label={item.name}
+                      staggerFrom={"center"}
+                      className="mono"
+                    />
+                    {isActive && (
+                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent"></span>
+                    )}
+                  </a>
+                );
+              })}
             </div>
           </div>
 
@@ -83,14 +166,30 @@ const Navigation = () => {
         </div>
 
         {/* Mobile Navigation */}
-        {isOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              {navItems.map((item) => (
+        <div 
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+            isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            {navItems.map((item, index) => {
+              const isActive = activeSection === item.href.replace('#', '');
+              return (
                 <a
                   key={item.name}
                   href={item.href}
-                  className="font-elegant text-foreground hover:text-gold block px-3 py-2 text-base transition-elegant"
+                  className={`font-elegant block px-3 py-2 text-base transition-all duration-300 relative transform ${
+                    isActive 
+                      ? 'text-gold bg-gold/10' 
+                      : 'text-foreground hover:text-gold hover:bg-gold/5'
+                  } ${
+                    isOpen 
+                      ? 'translate-x-0 opacity-100' 
+                      : '-translate-x-4 opacity-0'
+                  }`}
+                  style={{
+                    transitionDelay: isOpen ? `${index * 50}ms` : '0ms'
+                  }}
                   onClick={(e) => handleNavClick(e, item.href)}
                 >
                   <LetterSwapForward 
@@ -98,11 +197,14 @@ const Navigation = () => {
                     reverse={false}
                     className="font-bold"
                   />
+                  {isActive && (
+                    <span className="absolute left-0 top-0 bottom-0 w-1 bg-gold rounded-r"></span>
+                  )}
                 </a>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        )}
+        </div>
       </div>
     </nav>
   );

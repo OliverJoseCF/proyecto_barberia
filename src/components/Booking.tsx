@@ -10,21 +10,27 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { SERVICIOS, BARBEROS, HORARIOS } from "@/constants/bookingOptions";
 import DotGrid from "./DotGrid";
+import { motion } from "framer-motion";
+import { useInView } from "react-intersection-observer";
 
 
 const Booking = () => {
-  const { toast } = useToast();
+	const { toast } = useToast();
+	const { ref, inView } = useInView({
+		triggerOnce: true,
+		threshold: 0.1,
+	});
 
-  const [formData, setFormData] = useState({
-    nombre: "",
-    telefono: "",
-    fecha: "",
-    hora: "",
-    servicio: "",
-    barbero: ""
-  });
-  const [errors, setErrors] = useState<any>({});
-  const [loading, setLoading] = useState(false);
+	const [formData, setFormData] = useState({
+		nombre: "",
+		telefono: "",
+		fecha: "",
+		hora: "",
+		servicio: "",
+		barbero: ""
+	});
+	const [errors, setErrors] = useState<Record<string, string>>({});
+	const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const servicioGuardado = localStorage.getItem("servicioSeleccionado");
@@ -34,9 +40,9 @@ const Booking = () => {
     }
   }, []);
 
-  // Validación de campos
-  const validate = () => {
-    const newErrors: any = {};
+	// Validación de campos
+	const validate = () => {
+		const newErrors: Record<string, string> = {};
     if (!formData.nombre.trim()) newErrors.nombre = "El nombre es obligatorio.";
     if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(formData.nombre)) newErrors.nombre = "Solo letras y espacios.";
     if (!formData.telefono) newErrors.telefono = "El teléfono es obligatorio.";
@@ -98,36 +104,49 @@ const Booking = () => {
       setLoading(false);
     }
   };
-  return (
-    <section id="reservas" className="py-24 relative overflow-hidden">
-      {/* DotGrid Background */}
-      <div className="absolute inset-0 opacity-15">
-        <DotGrid 
-          dotSize={8}
-          gap={24}
-          baseColor="#D4AF37"
-          activeColor="#F5E6A8"
-          proximity={120}
-          speedTrigger={80}
-          shockRadius={200}
-          shockStrength={3}
-          className="w-full h-full"
-        />
-      </div>
-      
-      {/* Content overlay */}
-      <div className="relative z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="font-display text-4xl md:text-5xl mb-6 gradient-gold bg-clip-text text-transparent text-glow leading-relaxed overflow-visible pb-2">
-            Reserva tu Cita
-          </h2>
-          <p className="font-elegant text-xl text-muted-foreground max-w-2xl mx-auto">
-            Agenda tu próxima visita y déjanos crear la magia que buscas
-          </p>
-        </div>
+	return (
+		<section id="reservas" className="py-24 relative overflow-hidden" ref={ref}>
+			{/* DotGrid Background */}
+			<div className="absolute inset-0 opacity-15">
+				<DotGrid 
+					dotSize={8}
+					gap={24}
+					baseColor="#D4AF37"
+					activeColor="#F5E6A8"
+					proximity={120}
+					speedTrigger={80}
+					shockRadius={200}
+					shockStrength={3}
+					className="w-full h-full"
+				/>
+			</div>
+			
+			{/* Content overlay */}
+			<div className="relative z-10">
+				<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+				<div className="text-center mb-16">
+					<motion.h2 
+						initial={{ opacity: 0, scale: 0.9 }}
+						animate={inView ? { opacity: 1, scale: 1 } : {}}
+						transition={{ duration: 0.5, ease: "easeOut" }}
+						className="font-display text-4xl md:text-5xl mb-6 gradient-gold bg-clip-text text-transparent text-glow leading-relaxed overflow-visible pb-2">
+						Reserva tu Cita
+					</motion.h2>
+					<motion.p 
+						initial={{ opacity: 0, y: 20 }}
+						animate={inView ? { opacity: 1, y: 0 } : {}}
+						transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+						className="font-elegant text-xl text-muted-foreground max-w-2xl mx-auto">
+						Agenda tu próxima visita y déjanos crear la magia que buscas
+					</motion.p>
+				</div>
 
-        <Card className="glass-effect max-w-2xl mx-auto bg-card/40 backdrop-blur-md border-gold/20">
+				<motion.div
+					initial={{ opacity: 0, y: 50, scale: 0.95 }}
+					animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
+					transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+				>
+					<Card className="glass-effect max-w-2xl mx-auto bg-card/40 backdrop-blur-md border-gold/20">
           <CardHeader className="text-center">
             <CardTitle className="font-display text-2xl text-gold flex items-center justify-center space-x-2">
               <Scissors className="h-6 w-6" />
@@ -295,13 +314,14 @@ const Booking = () => {
               <p className="text-center font-elegant text-sm text-muted-foreground">
                 * Nos pondremos en contacto contigo para confirmar la disponibilidad
               </p>
-            </form>
-          </CardContent>
-        </Card>
-        </div>
-      </div>
-    </section>
-  );
+						</form>
+					</CardContent>
+				</Card>
+				</motion.div>
+				</div>
+			</div>
+		</section>
+	);
 };
 
 export default Booking;
