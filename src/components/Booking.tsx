@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, User, Phone, Scissors } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabaseClient";
+import { useAvailability } from "@/hooks/use-availability";
 import { SERVICIOS, BARBEROS, HORARIOS } from "@/constants/bookingOptions";
 import DotGrid from "./DotGrid";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { z } from "zod";
 
 
 const Booking = () => {
@@ -20,6 +21,7 @@ const Booking = () => {
 		triggerOnce: true,
 		threshold: 0.1,
 	});
+	const { loading: loadingAvailability, availabilityData, checkAvailability, getAvailableSlots } = useAvailability();
 
 	const [formData, setFormData] = useState({
 		nombre: "",
@@ -40,19 +42,59 @@ const Booking = () => {
     }
   }, []);
 
-	// Validación de campos
+  // Verificar disponibilidad cuando cambie fecha o barbero
+  useEffect(() => {
+    if (formData.fecha && formData.barbero) {
+      checkAvailability(formData.fecha, formData.barbero);
+      // Limpiar hora seleccionada si ya no está disponible
+      if (formData.hora) {
+        const availableSlots = getAvailableSlots(formData.fecha, formData.barbero);
+        if (!availableSlots.includes(formData.hora)) {
+          setFormData(prev => ({ ...prev, hora: '' }));
+        }
+      }
+    }
+  }, [formData.fecha, formData.barbero]);
+
+  // Esquema de validación con Zod
+  const bookingSchema = z.object({
+    nombre: z.string()
+      .min(2, 'El nombre debe tener al menos 2 caracteres')
+      .max(50, 'El nombre no puede exceder 50 caracteres')
+      .regex(/^[a-zA-ZáéíóúñÁÉÍÓÚÑüÜ\s]+$/, 'Solo se permiten letras y espacios'),
+    telefono: z.string()
+      .length(10, 'El teléfono debe tener exactamente 10 dígitos')
+      .regex(/^\d{10}$/, 'Solo se permiten números'),
+    fecha: z.string()
+      .min(1, 'La fecha es obligatoria')
+      .refine((date) => {
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return selectedDate >= today;
+      }, 'La fecha no puede ser anterior a hoy'),
+    hora: z.string().min(1, 'La hora es obligatoria'),
+    servicio: z.string().min(1, 'El servicio es obligatorio'),
+    barbero: z.string().min(1, 'El barbero es obligatorio'),
+  });
+
+	// Validación de campos mejorada
 	const validate = () => {
-		const newErrors: Record<string, string> = {};
-    if (!formData.nombre.trim()) newErrors.nombre = "El nombre es obligatorio.";
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(formData.nombre)) newErrors.nombre = "Solo letras y espacios.";
-    if (!formData.telefono) newErrors.telefono = "El teléfono es obligatorio.";
-    if (!/^\d{10}$/.test(formData.telefono)) newErrors.telefono = "Debe tener 10 dígitos.";
-    if (!formData.fecha) newErrors.fecha = "La fecha es obligatoria.";
-    if (!formData.hora) newErrors.hora = "La hora es obligatoria.";
-    if (!formData.servicio) newErrors.servicio = "El servicio es obligatorio.";
-    if (!formData.barbero) newErrors.barbero = "El barbero es obligatorio.";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+		const result = bookingSchema.safeParse(formData);
+    
+    if (result.success) {
+      setErrors({});
+      return true;
+    } else {
+      const newErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        if (issue.path.length > 0) {
+          newErrors[issue.path[0] as string] = issue.message;
+        }
+      });
+      setErrors(newErrors);
+      return false;
+    }
   };
 
   const servicios = [
@@ -80,15 +122,36 @@ const Booking = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-    setLoading(true);
-    try {
-      // Aquí podrías guardar en Supabase si lo deseas
-      // await supabase.from('citas').insert([{ ...formData }]);
+    if (!validate()) {
       toast({
-        title: "¡Solicitud de reserva enviada!",
-        description: `Gracias ${formData.nombre}, nos pondremos en contacto contigo para confirmar tu cita.`,
+        title: "Datos incompletos",
+        description: "Por favor, completa todos los campos correctamente.",
       });
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // Simular llamada a API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Guardar en localStorage temporalmente
+      const existingCitas = JSON.parse(localStorage.getItem('cantabarba-citas') || '[]');
+      const newCita = {
+        id: `cita_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        ...formData,
+        estado: 'pendiente',
+        createdAt: new Date().toISOString(),
+      };
+      existingCitas.push(newCita);
+      localStorage.setItem('cantabarba-citas', JSON.stringify(existingCitas));
+
+      toast({
+        title: "¡Solicitud de reserva enviada! ✅",
+        description: `Gracias ${formData.nombre}, nos pondremos en contacto contigo al ${formData.telefono} para confirmar tu cita del ${formData.fecha} a las ${formData.hora}.`,
+      });
+      
       setFormData({
         nombre: "",
         telefono: "",
@@ -98,8 +161,13 @@ const Booking = () => {
         barbero: ""
       });
       setErrors({});
-    } catch (err) {
-      toast({ title: "Error", description: "No se pudo enviar la reserva." });
+    } catch (err: any) {
+      console.error('Error al guardar cita:', err);
+      toast({ 
+        title: "Error al enviar reserva", 
+        description: err.message || "No se pudo enviar la reserva. Por favor, intenta de nuevo o llámanos directamente.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -158,7 +226,7 @@ const Booking = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="nombre" className="font-elegant text-foreground flex items-center space-x-2">
                     <User className="h-4 w-4 text-gold" />
@@ -222,7 +290,7 @@ const Booking = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="fecha" className="font-elegant text-foreground flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-gold" />
@@ -245,12 +313,29 @@ const Booking = () => {
                     <Clock className="h-4 w-4 text-gold" />
                     <span>Hora</span>
                   </Label>
-                  <Select value={formData.hora} onValueChange={(value) => setFormData({...formData, hora: value})}>
+                  <Select 
+                    value={formData.hora} 
+                    onValueChange={(value) => setFormData({...formData, hora: value})}
+                    disabled={!formData.fecha || !formData.barbero || loadingAvailability}
+                  >
                     <SelectTrigger className="font-elegant bg-background border-elegant-border/50 focus:border-gold">
-                      <SelectValue placeholder="Selecciona una hora" />
+                      <SelectValue placeholder={
+                        loadingAvailability ? "Verificando disponibilidad..." :
+                        !formData.fecha || !formData.barbero ? "Selecciona fecha y barbero primero" :
+                        "Selecciona una hora"
+                      } />
                     </SelectTrigger>
                     <SelectContent>
-                      {HORARIOS.map((hora) => (
+                      {availabilityData?.horarios.map((slot) => (
+                        <SelectItem 
+                          key={slot.hora} 
+                          value={slot.hora} 
+                          disabled={!slot.disponible}
+                          className={`font-elegant ${!slot.disponible ? 'opacity-50 line-through' : ''}`}
+                        >
+                          {slot.hora} {!slot.disponible && '(Ocupado)'}
+                        </SelectItem>
+                      )) || HORARIOS.map((hora) => (
                         <SelectItem key={hora} value={hora} className="font-elegant">
                           {hora}
                         </SelectItem>

@@ -1,0 +1,61 @@
+{
+  "name": "CantaBarba Studio",
+  "short_name": "CantaBarba",
+  "description": "CantaBarba Studio - La idea es tuya, nosotros hacemos la magia. Reserva tu cita de barbería en CDMX.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#d4af37",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "es-MX",
+  "categories": ["lifestyle", "business"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/src/assets/fondochido1.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Reservar Cita",
+      "short_name": "Reservar",
+      "description": "Reserva una nueva cita",
+      "url": "/#booking",
+      "icons": [
+        {
+          "src": "/src/assets/logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Contacto",
+      "short_name": "Contacto",
+      "description": "Información de contacto",
+      "url": "/#contact",
+      "icons": [
+        {
+          "src": "/src/assets/logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}
