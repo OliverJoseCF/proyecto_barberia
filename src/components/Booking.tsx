@@ -140,7 +140,7 @@ const Booking = () => {
     setLoading(true);
     
     try {
-      console.log('💾 Guardando cita en Supabase...');
+      console.log('💾 Guardando cita en Supabase....');
       
       const { data, error } = await createCita({
         cliente_nombre: formData.nombre,
