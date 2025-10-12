@@ -17,7 +17,8 @@ const Services = () => {
       subtitle: "Hombre y Niño",
       price: "$25 - $35",
       duration: "45-60 min",
-      description: "Cortes modernos y clásicos adaptados a tu estilo personal"
+      description: "Cortes modernos y clásicos adaptados a tu estilo personal",
+      serviceValue: "Corte de Cabello (Hombre)"
     },
     {
       icon: <Sparkles className="h-8 w-8" />,
@@ -25,7 +26,8 @@ const Services = () => {
       subtitle: "Perfilado Profesional",
       price: "$20",
       duration: "30 min",
-      description: "Definición y estilizado de barba con técnicas profesionales"
+      description: "Definición y estilizado de barba con técnicas profesionales",
+      serviceValue: "Arreglo de Barba"
     },
     {
       icon: <Zap className="h-8 w-8" />,
@@ -33,7 +35,8 @@ const Services = () => {
       subtitle: "Navaja Tradicional",
       price: "$30",
       duration: "45 min",
-      description: "Experiencia tradicional con navaja, toallas calientes y acabado perfecto"
+      description: "Experiencia tradicional con navaja, toallas calientes y acabado perfecto",
+      serviceValue: "Afeitado Clásico"
     },
     {
       icon: <Palette className="h-8 w-8" />,
@@ -41,7 +44,8 @@ const Services = () => {
       subtitle: "Color Profesional",
       price: "$40 - $60",
       duration: "90 min",
-      description: "Coloración profesional con productos de alta calidad"
+      description: "Coloración profesional con productos de alta calidad",
+      serviceValue: "Tintes"
     },
     {
       icon: <Star className="h-8 w-8" />,
@@ -49,7 +53,8 @@ const Services = () => {
       subtitle: "Arte Personalizado",
       price: "$35",
       duration: "60 min",
-      description: "Diseños únicos y personalizados para expresar tu personalidad"
+      description: "Diseños únicos y personalizados para expresar tu personalidad",
+      serviceValue: "Diseños Capilares"
     },
     {
       icon: <Eye className="h-8 w-8" />,
@@ -57,7 +62,8 @@ const Services = () => {
       subtitle: "Cuidado Completo",
       price: "$25",
       duration: "30 min",
-      description: "Tratamientos especializados para barba y perfilado de cejas"
+      description: "Tratamientos especializados para barba y perfilado de cejas",
+      serviceValue: "Tratamientos Barba y Cejas"
     },
     {
       icon: <ShoppingBag className="h-8 w-8" />,
@@ -65,7 +71,8 @@ const Services = () => {
       subtitle: "Línea Premium",
       price: "Variable",
       duration: "-",
-      description: "Productos profesionales para el cuidado en casa"
+      description: "Productos profesionales para el cuidado en casa",
+      serviceValue: "Productos de Cuidado"
     },
     {
       icon: <Heart className="h-8 w-8" />,
@@ -73,7 +80,8 @@ const Services = () => {
       subtitle: "Cuidado Facial",
       price: "$45",
       duration: "60 min",
-      description: "Faciales, mascarillas y exfoliaciones para el cuidado completo de la piel"
+      description: "Faciales, mascarillas y exfoliaciones para el cuidado completo de la piel",
+      serviceValue: "Faciales y Skincare"
     }
   ];
 
@@ -126,7 +134,7 @@ const Services = () => {
           animate={inView ? "visible" : "hidden"}
         >
           {services.map((service, index) => (
-            <Card key={index} className="glass-effect hover:border-gold/50 hover:glow-soft transition-elegant group bg-card/60 backdrop-blur-md">
+            <Card key={index} className="glass-effect hover:border-gold/50 hover:glow-soft transition-elegant group bg-card/60 backdrop-blur-md flex flex-col h-full">
               <CardHeader className="text-center">
                 <div className="mx-auto w-16 h-16 gradient-gold rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-elegant">
                   <div className="text-gold-foreground">
@@ -140,7 +148,7 @@ const Services = () => {
                   {service.subtitle}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="text-center space-y-3">
+              <CardContent className="text-center space-y-3 flex flex-col flex-grow">
                 <div className="flex justify-between items-center text-sm">
                   <span className="font-elegant text-muted-foreground">Precio:</span>
                   <span className="font-elegant text-gold font-semibold">{service.price}</span>
@@ -149,13 +157,17 @@ const Services = () => {
                   <span className="font-elegant text-muted-foreground">Duración:</span>
                   <span className="font-elegant text-foreground">{service.duration}</span>
                 </div>
-                <p className="font-elegant text-sm text-muted-foreground leading-relaxed mb-4">
+                <p className="font-elegant text-sm text-muted-foreground leading-relaxed mb-4 flex-grow">
                   {service.description}
                 </p>
                 <Button 
                   variant="elegant"
-                  className="w-full font-elegant"
+                  className="w-full font-elegant mt-auto"
                   onClick={() => {
+                    // Guardar el servicio seleccionado en localStorage
+                    localStorage.setItem('servicioSeleccionado', service.serviceValue);
+                    
+                    // Navegar a la sección de reservas
                     const bookingSection = document.getElementById('reservas');
                     if (bookingSection) {
                       bookingSection.scrollIntoView({ behavior: 'smooth' });

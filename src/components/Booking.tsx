@@ -42,6 +42,30 @@ const Booking = () => {
     }
   }, []);
 
+  // Efecto adicional para verificar cambios en localStorage cuando la sección está visible
+  useEffect(() => {
+    const checkServicio = () => {
+      const servicioGuardado = localStorage.getItem("servicioSeleccionado");
+      if (servicioGuardado) {
+        setFormData((prev) => ({ ...prev, servicio: servicioGuardado }));
+        localStorage.removeItem("servicioSeleccionado");
+      }
+    };
+
+    if (inView) {
+      checkServicio();
+    }
+
+    // Intervalo para detectar cambios mientras la sección está visible
+    const interval = setInterval(() => {
+      if (inView) {
+        checkServicio();  
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [inView]);
+
   // Verificar disponibilidad cuando cambie fecha o barbero
   useEffect(() => {
     if (formData.fecha && formData.barbero) {
