@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import PageTransition from '@/components/ui/PageTransition';
+import { useCitas } from '@/hooks/use-citas';
+import { supabase, type Cita } from '@/lib/supabase';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -14,56 +16,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Datos DEMO para el calendario
-const generateDemoCitas = () => {
-  const today = new Date();
-  const citas = [];
-  
-  // Generar citas para el mes actual
-  for (let i = -5; i < 15; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() + i);
-    
-    if (i % 3 === 0) {
-      citas.push({
-        id: `demo-${i}-1`,
-        nombre: 'Cliente Demo',
-        telefono: '5512345678',
-        fecha: date.toISOString().split('T')[0],
-        hora: '10:00',
-        servicio: 'Corte Clásico',
-        barbero: 'Ángel Ramírez',
-        estado: 'confirmada' as const
-      });
-    }
-    if (i % 2 === 0) {
-      citas.push({
-        id: `demo-${i}-2`,
-        nombre: 'Otro Cliente',
-        telefono: '5587654321',
-        fecha: date.toISOString().split('T')[0],
-        hora: '14:00',
-        servicio: 'Corte + Barba',
-        barbero: 'Emiliano Vega',
-        estado: 'pendiente' as const
-      });
-    }
-  }
-  
-  return citas;
-};
-
-interface Cita {
-  id: string;
-  nombre: string;
-  telefono: string;
-  fecha: string;
-  hora: string;
-  servicio: string;
-  barbero: string;
-  estado: 'pendiente' | 'confirmada' | 'cancelada' | 'completada';
-}
-
 interface BarberoData {
   nombre: string;
   email: string;
@@ -72,9 +24,7 @@ interface BarberoData {
 
 const CalendarView = () => {
   const navigate = useNavigate();
-  const searchParams = new URLSearchParams(window.location.search);
-  const demoMode = searchParams.get('demo') === 'true';
-  const demoRole = (searchParams.get('role') as 'admin' | 'barbero') || 'admin';
+  const { getCitas, getCitasByBarbero } = useCitas();
   
   const [barberoData, setBarberoData] = useState<BarberoData | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -83,38 +33,149 @@ const CalendarView = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (demoMode) {
-      // Configurar datos según el rol
-      if (demoRole === 'admin') {
-        setBarberoData({ 
-          nombre: 'Ángel Ramírez', 
-          email: 'angel@cantabarba.com', 
-          rol: 'admin' 
-        });
-        // Admin ve TODAS las citas
-        setCitas(generateDemoCitas());
-      } else {
-        setBarberoData({ 
-          nombre: 'Emiliano Vega', 
-          email: 'emiliano@cantabarba.com', 
-          rol: 'barbero' 
-        });
-        // Barbero solo ve SUS citas
-        const todasCitas = generateDemoCitas();
-        const citasEmiliano = todasCitas.filter(c => c.barbero === 'Emiliano Vega');
-        setCitas(citasEmiliano);
+    checkSessionAndLoadCitas();
+  }, [currentDate]);
+
+  // Suscripción en tiempo real a cambios en la tabla de citas
+  useEffect(() => {
+    if (!barberoData) return;
+
+    console.log('🔔 [Calendar] Configurando suscripción en tiempo real');
+
+    // Crear canal de suscripción
+    const channel = supabase
+      .channel('calendar-citas-changes', {
+        config: {
+          broadcast: { self: true }
+        }
+      })
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escuchar INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'citas'
+          // Sin filtro si es admin, con filtro si es barbero
+        },
+        (payload) => {
+          console.log('🔔 [Calendar] Cambio detectado:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const nuevaCita = payload.new as Cita;
+            console.log('➕ Nueva cita agregada:', nuevaCita);
+            
+            // Verificar si es cita del barbero (si no es admin)
+            if (barberoData.rol === 'barbero' && nuevaCita.barbero !== barberoData.nombre) {
+              return; // Ignorar citas de otros barberos
+            }
+            
+            setCitas(prev => [...prev, nuevaCita]);
+            toast.success('📅 Nueva cita en el calendario');
+          } 
+          else if (payload.eventType === 'UPDATE') {
+            const citaActualizada = payload.new as Cita;
+            console.log('✏️ Cita actualizada:', citaActualizada);
+            
+            setCitas(prev => 
+              prev.map(c => c.id === citaActualizada.id ? citaActualizada : c)
+            );
+          } 
+          else if (payload.eventType === 'DELETE') {
+            const citaEliminada = payload.old as Cita;
+            console.log('🗑️ Cita eliminada:', citaEliminada);
+            
+            setCitas(prev => prev.filter(c => c.id !== citaEliminada.id));
+          }
+        }
+      )
+      .subscribe((status, err) => {
+        if (err) {
+          console.error('❌ [Calendar] Error en suscripción:', err);
+          toast.error('Error en tiempo real. Recargando...');
+          setTimeout(() => {
+            if (barberoData) {
+              loadCitas(barberoData);
+            }
+          }, 2000);
+          return;
+        }
+        
+        console.log('📡 [Calendar] Estado de suscripción:', status);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ [Calendar] Suscripción activa correctamente');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ [Calendar] Error en el canal');
+          toast.error('Error de conexión en tiempo real');
+        } else if (status === 'TIMED_OUT') {
+          console.warn('⏱️ [Calendar] Timeout (normal con conexión lenta)');
+          // No mostrar toast - puede ser temporal
+        } else if (status === 'CLOSED') {
+          console.log('🔌 [Calendar] Canal cerrado');
+        }
+      });
+
+    // Cleanup: desuscribirse cuando el componente se desmonte
+    return () => {
+      console.log('🔕 [Calendar] Desuscribiendo de cambios en tiempo real');
+      supabase.removeChannel(channel);
+    };
+  }, [barberoData]);
+
+  const checkSessionAndLoadCitas = async () => {
+    try {
+      // Verificar sesión
+      const userDataString = localStorage.getItem('cantabarba_user');
+      if (!userDataString) {
+        console.log('❌ No hay sesión activa');
+        navigate('/admin/login');
+        return;
       }
-      setLoading(false);
-    } else {
-      // TODO: Cargar citas reales
+
+      const userData = JSON.parse(userDataString);
+      console.log('✅ Sesión activa:', userData);
+      
+      setBarberoData({
+        nombre: userData.nombre,
+        email: userData.email,
+        rol: userData.rol || 'barbero'
+      });
+
+      // Cargar citas
+      await loadCitas(userData);
+    } catch (error) {
+      console.error('Error al verificar sesión:', error);
       navigate('/admin/login');
     }
-  }, [demoMode, demoRole, currentDate]);
+  };
 
-  const loadCitas = async () => {
+  const loadCitas = async (userData: any) => {
     try {
-      // TODO: Cargar citas desde tu base de datos
-      console.log('Cargar citas del mes');
+      setLoading(true);
+      console.log('📅 Cargando citas del mes...');
+      
+      let citasData: Cita[] = [];
+      
+      // Cargar todas las citas según el rol
+      if (userData.rol === 'admin') {
+        citasData = await getCitas();
+        console.log(`✅ Admin - Cargadas ${citasData.length} citas totales`);
+      } else {
+        citasData = await getCitasByBarbero(userData.nombre);
+        console.log(`✅ Barbero - Cargadas ${citasData.length} citas de ${userData.nombre}`);
+      }
+      
+      // Filtrar por mes actual
+      const mesActual = currentDate.getMonth();
+      const añoActual = currentDate.getFullYear();
+      
+      const citasDelMes = citasData.filter(cita => {
+        const fechaCita = new Date(cita.fecha);
+        return fechaCita.getMonth() === mesActual && fechaCita.getFullYear() === añoActual;
+      });
+      
+      console.log(`📊 ${citasDelMes.length} citas en ${currentDate.toLocaleString('es-MX', { month: 'long', year: 'numeric' })}`);
+      setCitas(citasDelMes);
       setLoading(false);
     } catch (error: any) {
       toast.error('Error al cargar las citas del mes');
@@ -194,7 +255,7 @@ const CalendarView = () => {
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
-                onClick={() => navigate(demoMode ? `/admin/dashboard?demo=true&role=${demoRole}` : '/admin/dashboard')}
+                onClick={() => navigate('/admin/dashboard')}
                 className="text-gold hover:text-gold/80"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -202,14 +263,10 @@ const CalendarView = () => {
               <Scissors className="h-8 w-8 text-gold" />
               <div>
                 <h1 className="font-display text-2xl gradient-gold bg-clip-text text-transparent">
-                  Calendario {demoMode && '✨'}
+                  Calendario
                 </h1>
                 <p className="font-elegant text-sm text-muted-foreground">
-                  {demoMode ? (
-                    <span className="text-gold font-semibold">
-                      🎭 MODO DEMO - {barberoData?.nombre} ({barberoData?.rol === 'admin' ? 'Fundador/Admin' : 'Barbero'})
-                    </span>
-                  ) : barberoData ? (
+                  {barberoData ? (
                     <span>
                       {barberoData.nombre} - {barberoData.rol === 'admin' ? 'Todas las citas' : 'Mis citas'}
                     </span>
@@ -351,7 +408,7 @@ const CalendarView = () => {
                         </div>
                         <p className="font-elegant text-sm flex items-center gap-2 mb-1">
                           <User className="h-3 w-3 text-muted-foreground" />
-                          {cita.nombre}
+                          {cita.cliente_nombre}
                         </p>
                         <p className="font-elegant text-xs text-muted-foreground">
                           {cita.servicio} - {cita.barbero}

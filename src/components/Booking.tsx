@@ -8,7 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar, Clock, User, Phone, Scissors } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAvailability } from "@/hooks/use-availability";
-import { SERVICIOS, BARBEROS, HORARIOS } from "@/constants/bookingOptions";
+import { useCitas } from "@/hooks/use-citas";
+import { useBarberos } from "@/hooks/use-barberos";
+import { useServicios } from "@/hooks/use-servicios";
+import { HORARIOS } from "@/constants/bookingOptions";
 import DotGrid from "./DotGrid";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
@@ -22,6 +25,9 @@ const Booking = () => {
 		threshold: 0.1,
 	});
 	const { loading: loadingAvailability, availabilityData, checkAvailability, getAvailableSlots } = useAvailability();
+	const { createCita } = useCitas();
+	const { barberos, loading: loadingBarberos } = useBarberos();
+	const { servicios, loading: loadingServicios } = useServicios();
 
 	const [formData, setFormData] = useState({
 		nombre: "",
@@ -92,10 +98,10 @@ const Booking = () => {
     fecha: z.string()
       .min(1, 'La fecha es obligatoria')
       .refine((date) => {
-        const selectedDate = new Date(date);
+        // Comparar fechas como strings en formato YYYY-MM-DD (sin zona horaria)
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return selectedDate >= today;
+        const todayStr = today.toISOString().split('T')[0];
+        return date >= todayStr;
       }, 'La fecha no puede ser anterior a hoy'),
     hora: z.string().min(1, 'La hora es obligatoria'),
     servicio: z.string().min(1, 'El servicio es obligatorio'),
@@ -121,29 +127,6 @@ const Booking = () => {
     }
   };
 
-  const servicios = [
-    "Corte de Cabello (Hombre)",
-    "Corte de Cabello (Niño)",
-    "Arreglo de Barba",
-    "Afeitado Clásico",
-    "Tintes",
-    "Diseños Capilares",
-    "Tratamientos Barba y Cejas",
-    "Faciales y Skincare"
-  ];
-
-  const barberos = [
-    "Ángel Ramírez",
-    "Emiliano Vega"
-  ];
-
-  const horarios = [
-    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-    "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-    "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
-    "18:00", "18:30", "19:00", "19:30"
-  ];
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
@@ -157,25 +140,30 @@ const Booking = () => {
     setLoading(true);
     
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('💾 Guardando cita en Supabase...');
       
-      // Guardar en localStorage temporalmente
-      const existingCitas = JSON.parse(localStorage.getItem('cantabarba-citas') || '[]');
-      const newCita = {
-        id: `cita_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        ...formData,
+      const { data, error } = await createCita({
+        cliente_nombre: formData.nombre,
+        cliente_telefono: formData.telefono,
+        fecha: formData.fecha,
+        hora: formData.hora,
+        servicio: formData.servicio,
+        barbero: formData.barbero,
         estado: 'pendiente',
-        createdAt: new Date().toISOString(),
-      };
-      existingCitas.push(newCita);
-      localStorage.setItem('cantabarba-citas', JSON.stringify(existingCitas));
+      });
 
+      if (error) {
+        throw new Error(error);
+      }
+
+      console.log('✅ Cita guardada exitosamente en Supabase:', data);
+      
       toast({
-        title: "¡Solicitud de reserva enviada! ✅",
-        description: `Gracias ${formData.nombre}, nos pondremos en contacto contigo al ${formData.telefono} para confirmar tu cita del ${formData.fecha} a las ${formData.hora}.`,
+        title: "¡Reserva confirmada! ✅",
+        description: `Gracias ${formData.nombre}, tu cita ha sido registrada para el ${formData.fecha} a las ${formData.hora}.`,
       });
       
+      // Limpiar formulario
       setFormData({
         nombre: "",
         telefono: "",
@@ -324,6 +312,7 @@ const Booking = () => {
                     id="fecha"
                     type="date"
                     value={formData.fecha}
+                    min={new Date().toISOString().split('T')[0]}
                     aria-invalid={!!errors.fecha}
                     aria-describedby="error-fecha"
                     onChange={(e) => setFormData({...formData, fecha: e.target.value})}
@@ -380,11 +369,17 @@ const Booking = () => {
                     <SelectValue placeholder="Selecciona un servicio" />
                   </SelectTrigger>
                   <SelectContent>
-                    {SERVICIOS.map((servicio) => (
-                      <SelectItem key={servicio} value={servicio} className="font-elegant">
-                        {servicio}
-                      </SelectItem>
-                    ))}
+                    {loadingServicios ? (
+                      <SelectItem value="loading" disabled>Cargando servicios...</SelectItem>
+                    ) : servicios.length === 0 ? (
+                      <SelectItem value="empty" disabled>No hay servicios disponibles</SelectItem>
+                    ) : (
+                      servicios.map((servicio) => (
+                        <SelectItem key={servicio.id} value={servicio.nombre} className="font-elegant">
+                          {servicio.nombre} - ${servicio.precio}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.servicio && <span className="text-red-500 text-xs">{errors.servicio}</span>}
@@ -400,11 +395,17 @@ const Booking = () => {
                     <SelectValue placeholder="Selecciona un barbero" />
                   </SelectTrigger>
                   <SelectContent>
-                    {BARBEROS.map((barbero) => (
-                      <SelectItem key={barbero} value={barbero} className="font-elegant">
-                        {barbero}
-                      </SelectItem>
-                    ))}
+                    {loadingBarberos ? (
+                      <SelectItem value="loading" disabled>Cargando barberos...</SelectItem>
+                    ) : barberos.length === 0 ? (
+                      <SelectItem value="empty" disabled>No hay barberos disponibles</SelectItem>
+                    ) : (
+                      barberos.map((barbero) => (
+                        <SelectItem key={barbero.id} value={barbero.nombre} className="font-elegant">
+                          {barbero.nombre}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.barbero && <span className="text-red-500 text-xs">{errors.barbero}</span>}

@@ -18,19 +18,10 @@ import { toast } from 'sonner';
 import { useAvailability } from '@/hooks/use-availability';
 import { HORARIOS, BARBEROS } from '@/constants/bookingOptions';
 import { motion } from 'framer-motion';
-
-interface CitaOriginal {
-  id: string;
-  nombre: string;
-  telefono: string;
-  fecha: string;
-  hora: string;
-  servicio: string;
-  barbero: string;
-}
+import { type Cita } from '@/lib/supabase';
 
 interface ReprogramacionCitaProps {
-  cita: CitaOriginal;
+  cita: Cita;
   onClose: () => void;
   onSuccess: (nuevaFecha: string, nuevaHora: string) => void;
 }
@@ -210,11 +201,11 @@ export const ReprogramacionCita = ({ cita, onClose, onSuccess }: ReprogramacionC
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-elegant">
                 <div className="flex items-center space-x-2">
                   <User className="h-4 w-4 text-gold" />
-                  <span>{cita.nombre}</span>
+                  <span>{cita.cliente_nombre}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Phone className="h-4 w-4 text-gold" />
-                  <span>{cita.telefono}</span>
+                  <span>{cita.cliente_telefono}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Scissors className="h-4 w-4 text-gold" />

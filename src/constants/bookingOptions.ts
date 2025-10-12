@@ -10,8 +10,10 @@ export const SERVICIOS = [
   "Faciales y Skincare"
 ];
 
+// NOTA: Los barberos ahora se cargan dinámicamente desde Supabase
+// Este array ya no se usa pero se mantiene para compatibilidad
 export const BARBEROS = [
-  "Ángel Ramírez",
+  "Angel Ramirez",
   "Emiliano Vega"
 ];
 

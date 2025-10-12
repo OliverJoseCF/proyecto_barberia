@@ -14,24 +14,28 @@ interface BarberoData {
 
 const Statistics = () => {
   const navigate = useNavigate();
-  const searchParams = new URLSearchParams(window.location.search);
-  const demoMode = searchParams.get('demo') === 'true';
-  const demoRole = searchParams.get('role') as 'admin' | 'barbero' || 'admin';
   const [loading, setLoading] = useState(true);
   const [barberoData, setBarberoData] = useState<BarberoData | null>(null);
 
   useEffect(() => {
-    if (demoMode) {
-      setBarberoData({
-        nombre: demoRole === 'admin' ? 'Oliver José' : 'Emiliano Vega',
-        email: demoRole === 'admin' ? 'admin@cantabarba.com' : 'emiliano@cantabarba.com',
-        rol: demoRole
-      });
-      setLoading(false);
-    } else {
+    checkSession();
+  }, []);
+
+  const checkSession = () => {
+    const userDataString = localStorage.getItem('cantabarba_user');
+    if (!userDataString) {
       navigate('/admin/login');
+      return;
     }
-  }, [demoMode, demoRole, navigate]);
+
+    const userData = JSON.parse(userDataString);
+    setBarberoData({
+      nombre: userData.nombre,
+      email: userData.email,
+      rol: userData.rol || 'barbero'
+    });
+    setLoading(false);
+  };
 
   if (loading) {
     return (
@@ -54,7 +58,7 @@ const Statistics = () => {
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
-                onClick={() => navigate(demoMode ? `/admin/dashboard?demo=true&role=${demoRole}` : '/admin/dashboard')}
+                onClick={() => navigate('/admin/dashboard')}
                 className="text-gold hover:text-gold/80"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -62,14 +66,10 @@ const Statistics = () => {
               <Scissors className="h-8 w-8 text-gold" />
               <div>
                 <h1 className="font-display text-2xl gradient-gold bg-clip-text text-transparent">
-                  Estadisticas {demoMode && '✨'}
+                  Estadísticas
                 </h1>
                 <p className="font-elegant text-sm text-muted-foreground">
-                  {demoMode ? (
-                    <span className="text-gold font-semibold">
-                      🎭 MODO DEMO - {barberoData?.nombre} ({barberoData?.rol === 'admin' ? 'Fundador/Admin' : 'Barbero'})
-                    </span>
-                  ) : barberoData ? (
+                  {barberoData ? (
                     <span>
                       {barberoData.nombre} - {barberoData.rol === 'admin' ? 'Análisis completo' : 'Mi desempeño'}
                     </span>
@@ -91,7 +91,10 @@ const Statistics = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <AnalyticsDashboard />
+          <AnalyticsDashboard 
+            barberoNombre={barberoData.nombre}
+            rol={barberoData.rol}
+          />
         </motion.div>
       </main>
     </PageTransition>

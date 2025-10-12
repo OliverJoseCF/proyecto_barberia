@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import PageTransition from '@/components/ui/PageTransition';
 import { AppointmentCardSkeleton } from '@/components/ui/loading-skeletons';
 import ReprogramacionCita from '@/components/ReprogramacionCita';
+import { useCitas } from '@/hooks/use-citas';
+import { supabase, type Cita } from '@/lib/supabase';
 import { 
   Calendar, 
   Clock, 
@@ -19,7 +21,8 @@ import {
   User,
   Phone,
   Edit3,
-  MoreVertical
+  MoreVertical,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -115,18 +118,6 @@ const DEMO_ALL_CITAS = [
   }
 ];
 
-interface Cita {
-  id: string;
-  nombre: string;
-  telefono: string;
-  fecha: string;
-  hora: string;
-  servicio: string;
-  barbero: string;
-  estado: 'pendiente' | 'confirmada' | 'cancelada' | 'completada';
-  created_at: string;
-}
-
 interface BarberoData {
   nombre: string;
   email: string;
@@ -135,9 +126,7 @@ interface BarberoData {
 
 const AllAppointments = () => {
   const navigate = useNavigate();
-  const searchParams = new URLSearchParams(window.location.search);
-  const demoMode = searchParams.get('demo') === 'true';
-  const demoRole = (searchParams.get('role') as 'admin' | 'barbero') || 'admin';
+  const { getCitas, getCitasByBarbero, updateCita, deleteCita } = useCitas();
   
   const [barberoData, setBarberoData] = useState<BarberoData | null>(null);
   
@@ -150,43 +139,160 @@ const AllAppointments = () => {
   const [citaParaReprogramar, setCitaParaReprogramar] = useState<Cita | null>(null);
 
   useEffect(() => {
-    if (demoMode) {
-      // Configurar datos según el rol
-      if (demoRole === 'admin') {
-        setBarberoData({ 
-          nombre: 'Ángel Ramírez', 
-          email: 'angel@cantabarba.com', 
-          rol: 'admin' 
-        });
-        // Admin ve TODAS las citas
-        setCitas(DEMO_ALL_CITAS);
-        setFilteredCitas(DEMO_ALL_CITAS);
-      } else {
-        setBarberoData({ 
-          nombre: 'Emiliano Vega', 
-          email: 'emiliano@cantabarba.com', 
-          rol: 'barbero' 
-        });
-        // Barbero solo ve SUS citas
-        const citasEmiliano = DEMO_ALL_CITAS.filter(c => c.barbero === 'Emiliano Vega');
-        setCitas(citasEmiliano);
-        setFilteredCitas(citasEmiliano);
-      }
-      setLoading(false);
-    } else {
-      loadAllCitas();
+    checkSessionAndLoadCitas();
+  }, []);
+
+  // Suscripción en tiempo real a cambios en la tabla de citas
+  useEffect(() => {
+    if (!barberoData) {
+      console.log('⏳ [AllAppointments] Esperando datos del barbero...');
+      return;
     }
-  }, [demoMode, demoRole]);
+
+    console.log('🔔 [AllAppointments] Configurando suscripción en tiempo real para:', barberoData.nombre, 'Rol:', barberoData.rol);
+
+    // Crear canal de suscripción
+    const channel = supabase
+      .channel('all-citas-changes', {
+        config: {
+          broadcast: { self: true }
+        }
+      })
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escuchar INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'citas'
+          // Sin filtro - escuchamos todas las citas
+        },
+        (payload) => {
+          console.log('🔔 [AllAppointments] Cambio detectado:', payload.eventType, payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const nuevaCita = payload.new as Cita;
+            console.log('➕ Nueva cita agregada:', nuevaCita);
+            
+            // Verificar si es cita del barbero (si no es admin)
+            if (barberoData.rol === 'barbero' && nuevaCita.barbero !== barberoData.nombre) {
+              console.log('⏭️ Ignorando cita de otro barbero:', nuevaCita.barbero);
+              return; // Ignorar citas de otros barberos
+            }
+            
+            console.log('✅ Agregando nueva cita a la lista');
+            setCitas(prev => {
+              // Evitar duplicados
+              if (prev.some(c => c.id === nuevaCita.id)) {
+                console.log('⚠️ Cita ya existe en la lista');
+                return prev;
+              }
+              return [...prev, nuevaCita];
+            });
+            toast.success('📅 Nueva cita agregada');
+          } 
+          else if (payload.eventType === 'UPDATE') {
+            const citaActualizada = payload.new as Cita;
+            console.log('✏️ Cita actualizada:', citaActualizada);
+            
+            // Verificar si es cita del barbero (si no es admin)
+            if (barberoData.rol === 'barbero' && citaActualizada.barbero !== barberoData.nombre) {
+              console.log('⏭️ Ignorando actualización de otro barbero');
+              return;
+            }
+            
+            setCitas(prev => 
+              prev.map(c => c.id === citaActualizada.id ? citaActualizada : c)
+            );
+          } 
+          else if (payload.eventType === 'DELETE') {
+            const citaEliminada = payload.old as Cita;
+            console.log('🗑️ Cita eliminada:', citaEliminada);
+            
+            setCitas(prev => prev.filter(c => c.id !== citaEliminada.id));
+          }
+        }
+      )
+      .subscribe((status, err) => {
+        if (err) {
+          console.error('❌ [AllAppointments] Error en suscripción:', err);
+          toast.error('Error en tiempo real. Recargando...');
+          setTimeout(() => {
+            checkSessionAndLoadCitas();
+          }, 2000);
+          return;
+        }
+        
+        console.log('📡 [AllAppointments] Estado de suscripción:', status);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ [AllAppointments] Suscripción activa correctamente');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ [AllAppointments] Error en el canal');
+          toast.error('Error de conexión en tiempo real');
+        } else if (status === 'TIMED_OUT') {
+          console.warn('⏱️ [AllAppointments] Timeout (normal con conexión lenta)');
+          // No mostrar toast - puede ser temporal
+        } else if (status === 'CLOSED') {
+          console.log('🔌 [AllAppointments] Canal cerrado');
+        }
+      });
+
+    // Cleanup: desuscribirse cuando el componente se desmonte
+    return () => {
+      console.log('🔕 [AllAppointments] Desuscribiendo de cambios en tiempo real');
+      supabase.removeChannel(channel);
+    };
+  }, [barberoData]);
 
   useEffect(() => {
     applyFilters();
   }, [searchTerm, filterEstado, filterFecha, citas]);
 
-  const loadAllCitas = async () => {
+  const checkSessionAndLoadCitas = async () => {
     try {
-      // TODO: Cargar citas reales desde tu base de datos
-      console.log('Cargar todas las citas desde base de datos');
+      // Verificar sesión
+      const userDataString = localStorage.getItem('cantabarba_user');
+      if (!userDataString) {
+        console.log('❌ No hay sesión activa');
+        navigate('/admin/login');
+        return;
+      }
+
+      const userData = JSON.parse(userDataString);
+      console.log('✅ Sesión activa:', userData);
+      
+      setBarberoData({
+        nombre: userData.nombre,
+        email: userData.email,
+        rol: userData.rol || 'barbero'
+      });
+
+      // Cargar citas según el rol
+      await loadAllCitas(userData);
+    } catch (error) {
+      console.error('Error al verificar sesión:', error);
       navigate('/admin/login');
+    }
+  };
+
+  const loadAllCitas = async (userData: any) => {
+    try {
+      setLoading(true);
+      console.log('📋 Cargando todas las citas...');
+      
+      let citasData: Cita[] = [];
+      
+      // Si es admin, cargar TODAS las citas. Si es barbero, solo las suyas
+      if (userData.rol === 'admin') {
+        citasData = await getCitas();
+        console.log(`✅ Admin - Cargadas ${citasData.length} citas totales`);
+      } else {
+        citasData = await getCitasByBarbero(userData.nombre);
+        console.log(`✅ Barbero - Cargadas ${citasData.length} citas de ${userData.nombre}`);
+      }
+      
+      setCitas(citasData);
+      setFilteredCitas(citasData);
       setLoading(false);
     } catch (error: any) {
       toast.error('Error al cargar las citas');
@@ -200,8 +306,8 @@ const AllAppointments = () => {
     // Filtrar por búsqueda
     if (searchTerm) {
       filtered = filtered.filter(cita => 
-        cita.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cita.telefono.includes(searchTerm) ||
+        cita.cliente_nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cita.cliente_telefono.includes(searchTerm) ||
         cita.servicio.toLowerCase().includes(searchTerm.toLowerCase()) ||
         cita.barbero.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -221,39 +327,89 @@ const AllAppointments = () => {
   };
 
   const actualizarEstado = async (citaId: string, nuevoEstado: Cita['estado']) => {
-    if (demoMode) {
+    try {
+      console.log(`📝 [AllAppointments] Actualizando cita ${citaId} a estado: ${nuevoEstado}`);
+      
+      const { error } = await updateCita(citaId, { estado: nuevoEstado });
+      
+      if (error) {
+        throw new Error(error);
+      }
+
+      console.log(`✅ [AllAppointments] Cita actualizada exitosamente`);
+
+      // Actualizar lista local
       setCitas(prev => prev.map(c => 
         c.id === citaId ? { ...c, estado: nuevoEstado } : c
       ));
-      toast.success(`Cita ${nuevoEstado} exitosamente (DEMO)`);
-      return;
-    }
-
-    try {
-      // TODO: Actualizar en tu base de datos
-      console.log('Actualizar cita:', citaId, nuevoEstado);
-      toast.success(`Cita ${nuevoEstado} exitosamente`);
-      loadAllCitas();
+      
+      // Mensajes personalizados
+      const mensajes = {
+        confirmada: '✅ Cita confirmada exitosamente',
+        cancelada: '❌ Cita cancelada',
+        completada: '✔️ Cita marcada como completada',
+        pendiente: '⏳ Cita marcada como pendiente'
+      };
+      
+      toast.success(mensajes[nuevoEstado] || 'Cita actualizada');
     } catch (error: any) {
+      console.error('❌ [AllAppointments] Error al actualizar estado:', error);
       toast.error('Error al actualizar la cita');
     }
   };
 
-  const handleReprogramarCita = (nuevaFecha: string, nuevaHora: string) => {
+  const eliminarCita = async (citaId: string) => {
+    try {
+      console.log(`🗑️ [AllAppointments] Eliminando cita ${citaId}`);
+      
+      const { error } = await deleteCita(citaId);
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      console.log(`✅ [AllAppointments] Cita eliminada exitosamente`);
+      
+      // Actualizar lista local
+      setCitas(prev => prev.filter(c => c.id !== citaId));
+
+      toast.success('🗑️ Cita eliminada correctamente');
+    } catch (error: any) {
+      console.error('❌ [AllAppointments] Error al eliminar:', error);
+      toast.error('Error al eliminar la cita');
+    }
+  };
+
+  const handleReprogramarCita = async (nuevaFecha: string, nuevaHora: string) => {
     if (!citaParaReprogramar) return;
 
-    if (demoMode) {
+    try {
+      console.log(`📅 [AllAppointments] Reprogramando cita ${citaParaReprogramar.id} a ${nuevaFecha} ${nuevaHora}`);
+      
+      const { error } = await updateCita(citaParaReprogramar.id, { 
+        fecha: nuevaFecha, 
+        hora: nuevaHora 
+      });
+      
+      if (error) {
+        throw new Error(error);
+      }
+
+      console.log(`✅ [AllAppointments] Cita reprogramada exitosamente`);
+
+      // Actualizar lista local
       setCitas(prev => prev.map(c => 
         c.id === citaParaReprogramar.id 
           ? { ...c, fecha: nuevaFecha, hora: nuevaHora } 
           : c
       ));
+      
+      toast.success(`📅 Cita reprogramada para el ${new Date(nuevaFecha).toLocaleDateString('es-MX')} a las ${nuevaHora}`);
       setCitaParaReprogramar(null);
-      return;
+    } catch (error: any) {
+      console.error('❌ [AllAppointments] Error al reprogramar:', error);
+      toast.error('Error al reprogramar la cita');
     }
-
-    // TODO: Actualizar en base de datos real
-    console.log('Reprogramar cita:', citaParaReprogramar.id, nuevaFecha, nuevaHora);
   };
 
   const getEstadoBadge = (estado: Cita['estado']) => {
@@ -356,7 +512,7 @@ const AllAppointments = () => {
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
-                onClick={() => navigate(demoMode ? `/admin/dashboard?demo=true&role=${demoRole}` : '/admin/dashboard')}
+                onClick={() => navigate('/admin/dashboard')}
                 className="text-gold hover:text-gold/80"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -364,14 +520,10 @@ const AllAppointments = () => {
               <Scissors className="h-8 w-8 text-gold" />
               <div>
                 <h1 className="font-display text-2xl gradient-gold bg-clip-text text-transparent">
-                  Todas las Citas {demoMode && '✨'}
+                  Todas las Citas
                 </h1>
                 <p className="font-elegant text-sm text-muted-foreground">
-                  {demoMode ? (
-                    <span className="text-gold font-semibold">
-                      🎭 MODO DEMO - {barberoData?.nombre} ({barberoData?.rol === 'admin' ? 'Fundador/Admin' : 'Barbero'})
-                    </span>
-                  ) : barberoData ? (
+                  {barberoData ? (
                     <span>
                       {barberoData.nombre} - {barberoData.rol === 'admin' ? 'Todas las citas' : 'Mis citas'}
                     </span>
@@ -523,10 +675,10 @@ const AllAppointments = () => {
                     {/* Cliente - 2 columnas */}
                     <div className="col-span-12 md:col-span-2">
                       <p className="font-elegant text-sm text-muted-foreground mb-1">Cliente</p>
-                      <p className="font-display text-gold truncate">{cita.nombre}</p>
+                      <p className="font-display text-gold truncate">{cita.cliente_nombre}</p>
                       <p className="font-elegant text-xs text-muted-foreground flex items-center gap-1">
                         <Phone className="h-3 w-3" />
-                        {cita.telefono}
+                        {cita.cliente_telefono}
                       </p>
                     </div>
                     
@@ -610,6 +762,26 @@ const AllAppointments = () => {
                             Reprogramar
                           </Button>
                         </>
+                      ) : cita.estado === 'completada' ? (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => eliminarCita(cita.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 h-8"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Eliminar Cita
+                        </Button>
+                      ) : cita.estado === 'cancelada' ? (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => eliminarCita(cita.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 h-8"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Eliminar Cita
+                        </Button>
                       ) : (
                         <div className="h-8"></div>
                       )}

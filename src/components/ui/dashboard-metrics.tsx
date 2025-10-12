@@ -138,12 +138,14 @@ export const DASHBOARD_METRICS = {
   clientesNuevos: 23,
   promedioEspera: 12,
   satisfaccion: 4.8,
+  promedioIngresosPorCita: 360,
   
   trends: {
     citas: { value: 12, isPositive: true },
     ingresos: { value: 8, isPositive: true },
     clientes: { value: 15, isPositive: true },
-    satisfaccion: { value: 2, isPositive: true }
+    satisfaccion: { value: 2, isPositive: true },
+    ingresosPromedio: { value: 5, isPositive: true }
   },
   
   serviciosPopulares: [

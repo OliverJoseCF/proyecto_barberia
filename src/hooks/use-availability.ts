@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { supabase, TABLES } from '@/lib/supabase';
 
 interface TimeSlot {
   hora: string;
@@ -12,19 +13,13 @@ interface AvailabilityData {
   horarios: TimeSlot[];
 }
 
-// Simulación de citas ocupadas (esto vendría de la base de datos)
-const CITAS_OCUPADAS = [
-  { fecha: '2025-10-08', hora: '10:00', barbero: 'Ángel Ramírez' },
-  { fecha: '2025-10-08', hora: '11:30', barbero: 'Emiliano Vega' },
-  { fecha: '2025-10-08', hora: '14:00', barbero: 'Ángel Ramírez' },
-  { fecha: '2025-10-09', hora: '09:00', barbero: 'Emiliano Vega' },
-  { fecha: '2025-10-09', hora: '15:30', barbero: 'Ángel Ramírez' },
-];
-
 export const useAvailability = () => {
   const [loading, setLoading] = useState(false);
   const [availabilityData, setAvailabilityData] = useState<AvailabilityData | null>(null);
 
+  // ============================================
+  // FUNCIÓN PRINCIPAL: Verificar disponibilidad
+  // ============================================
   const checkAvailability = async (fecha: string, barbero: string) => {
     if (!fecha || !barbero) {
       setAvailabilityData(null);
@@ -32,9 +27,6 @@ export const useAvailability = () => {
     }
 
     setLoading(true);
-    
-    // Simular llamada a API
-    await new Promise(resolve => setTimeout(resolve, 500));
     
     try {
       // Horarios disponibles por defecto
@@ -44,9 +36,27 @@ export const useAvailability = () => {
         '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'
       ];
 
+      // Consultar citas ocupadas desde Supabase
+      console.log('🔄 Consultando disponibilidad desde Supabase...');
+      
+      const { data, error } = await supabase
+        .from(TABLES.CITAS)
+        .select('fecha, hora, barbero')
+        .eq('fecha', fecha)
+        .eq('barbero', barbero)
+        .in('estado', ['pendiente', 'confirmada']); // Solo citas activas
+
+      if (error) {
+        console.error('Error al consultar disponibilidad:', error);
+        throw error;
+      }
+
+      const citasOcupadas = data || [];
+      console.log(`✅ ${citasOcupadas.length} citas encontradas en Supabase`);
+
       // Verificar qué horarios están ocupados
       const horariosConDisponibilidad: TimeSlot[] = horariosBase.map(hora => {
-        const estaOcupado = CITAS_OCUPADAS.some(cita => 
+        const estaOcupado = citasOcupadas.some(cita => 
           cita.fecha === fecha && 
           cita.hora === hora && 
           cita.barbero === barbero
@@ -72,14 +82,31 @@ export const useAvailability = () => {
     }
   };
 
-  const isTimeSlotAvailable = (fecha: string, hora: string, barbero: string): boolean => {
-    return !CITAS_OCUPADAS.some(cita => 
-      cita.fecha === fecha && 
-      cita.hora === hora && 
-      cita.barbero === barbero
-    );
+  // ============================================
+  // HELPER: Verificar si un horario específico está disponible
+  // ============================================
+  const isTimeSlotAvailable = async (fecha: string, hora: string, barbero: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.CITAS)
+        .select('id')
+        .eq('fecha', fecha)
+        .eq('hora', hora)
+        .eq('barbero', barbero)
+        .in('estado', ['pendiente', 'confirmada'])
+        .limit(1);
+
+      if (error) throw error;
+      return !data || data.length === 0;
+    } catch (error) {
+      console.error('Error verificando disponibilidad:', error);
+      return false;
+    }
   };
 
+  // ============================================
+  // HELPER: Obtener horarios disponibles
+  // ============================================
   const getAvailableSlots = (fecha: string, barbero: string): string[] => {
     if (!availabilityData || availabilityData.fecha !== fecha || availabilityData.barbero !== barbero) {
       return [];

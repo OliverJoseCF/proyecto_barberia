@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Scissors, Lock, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -22,21 +23,41 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      // TODO: Integrar con tu sistema de autenticación aquí
-      // Por ahora simulamos el login
-      console.log('Login attempt:', formData);
+      console.log('🔐 Intentando login con:', formData.email);
+      
+      // Buscar barbero por email en Supabase
+      const { data: barbero, error } = await supabase
+        .from('barberos')
+        .select('*')
+        .eq('email', formData.email)
+        .eq('activo', true)
+        .single();
 
-      // Simulación básica
-      if (formData.email && formData.password) {
-        toast({
-          title: '¡Bienvenido!',
-          description: 'Has iniciado sesión correctamente.',
-        });
-        navigate('/admin/dashboard');
-      } else {
-        throw new Error('Por favor completa todos los campos');
+      if (error || !barbero) {
+        throw new Error('Usuario no encontrado o inactivo');
       }
+
+      // TODO: En producción, verificar la contraseña de forma segura
+      console.log('✅ Barbero encontrado:', barbero);
+
+      // Guardar sesión en localStorage
+      localStorage.setItem('cantabarba_user', JSON.stringify({
+        id: barbero.id,
+        nombre: barbero.nombre,
+        email: barbero.email,
+        especialidad: barbero.especialidad,
+        rol: 'barbero', // Todos son barberos por ahora
+        loginTime: new Date().toISOString()
+      }));
+
+      toast({
+        title: `¡Bienvenido ${barbero.nombre}! 👋`,
+        description: 'Has iniciado sesión correctamente.',
+      });
+      
+      navigate('/admin/dashboard');
     } catch (error: any) {
+      console.error('❌ Error de login:', error);
       toast({
         title: 'Error de autenticación',
         description: error.message || 'Credenciales incorrectas',
@@ -118,41 +139,6 @@ const AdminLogin = () => {
                   'Iniciar Sesión'
                 )}
               </Button>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gold/20" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground font-elegant">MODO DEMO</span>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Button
-                  type="button"
-                  onClick={() => navigate('/admin/dashboard?demo=true&role=admin')}
-                  variant="outline"
-                  className="w-full border-gold/50 text-gold hover:bg-gold/10 font-elegant py-6"
-                >
-                  <div className="flex flex-col items-center">
-                    <span className="text-lg">👑 Demo como Ángel (Fundador/Admin)</span>
-                    <span className="text-xs opacity-75">Ver todas las citas de todos los barberos</span>
-                  </div>
-                </Button>
-
-                <Button
-                  type="button"
-                  onClick={() => navigate('/admin/dashboard?demo=true&role=barbero')}
-                  variant="outline"
-                  className="w-full border-blue-500/50 text-blue-400 hover:bg-blue-500/10 font-elegant py-6"
-                >
-                  <div className="flex flex-col items-center">
-                    <span className="text-lg">✂️ Demo como Emiliano (Barbero)</span>
-                    <span className="text-xs opacity-75">Solo ver mis propias citas</span>
-                  </div>
-                </Button>
-              </div>
 
               <p className="text-center text-sm text-muted-foreground font-elegant mt-4">
                 Solo para personal autorizado de CantaBarba Studio
