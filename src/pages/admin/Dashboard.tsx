@@ -620,17 +620,19 @@ const AdminDashboard = () => {
               transition={{ delay: 0.3, duration: 0.5 }}
               className="flex items-center gap-4"
             >
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/')}
-                className="text-gold hover:text-gold/80 font-elegant"
-                asChild
-              >
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Menu className="h-5 w-5 mr-2" />
-                  Ir al sitio
-                </motion.button>
-              </Button>
+              {barberoLogueado?.rol === 'admin' && (
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate('/admin/configuracion')}
+                  className="text-gold hover:text-gold/80 font-elegant"
+                  asChild
+                >
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Menu className="h-5 w-5 mr-2" />
+                    Configuración
+                  </motion.button>
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={handleLogout}

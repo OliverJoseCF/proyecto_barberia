@@ -15,6 +15,16 @@ const AllAppointments = lazy(() => import("./pages/admin/AllAppointments"));
 const CalendarView = lazy(() => import("./pages/admin/Calendar"));
 const Statistics = lazy(() => import("./pages/admin/Statistics"));
 const Auditoria = lazy(() => import("./pages/admin/Auditoria"));
+const AdminSettings = lazy(() => import("./pages/admin/Settings"));
+const ServiceManagement = lazy(() => import("./pages/admin/ServiceManagement"));
+const ScheduleManagement = lazy(() => import("./pages/admin/ScheduleManagement"));
+const BarberManagement = lazy(() => import("./pages/admin/BarberManagement"));
+const BusinessSettings = lazy(() => import("./pages/admin/BusinessSettings"));
+const GalleryManagement = lazy(() => import("./pages/admin/GalleryManagement"));
+const NotificationSettings = lazy(() => import("./pages/admin/NotificationSettings"));
+const ReportsManagement = lazy(() => import("./pages/admin/ReportsManagement"));
+const ClientManagement = lazy(() => import("./pages/admin/ClientManagement"));
+const BookingSettings = lazy(() => import("./pages/admin/BookingSettings"));
 
 // Configuración optimizada de QueryClient
 const queryClient = new QueryClient({
@@ -53,6 +63,16 @@ const App = () => (
             <Route path="/admin/calendario" element={<CalendarView />} />
             <Route path="/admin/estadisticas" element={<Statistics />} />
             <Route path="/admin/auditoria" element={<Auditoria />} />
+            <Route path="/admin/configuracion" element={<AdminSettings />} />
+            <Route path="/admin/configuracion/servicios" element={<ServiceManagement />} />
+            <Route path="/admin/configuracion/horarios" element={<ScheduleManagement />} />
+            <Route path="/admin/configuracion/barberos" element={<BarberManagement />} />
+            <Route path="/admin/configuracion/empresa" element={<BusinessSettings />} />
+            <Route path="/admin/configuracion/galeria" element={<GalleryManagement />} />
+            <Route path="/admin/configuracion/notificaciones" element={<NotificationSettings />} />
+            <Route path="/admin/configuracion/reportes" element={<ReportsManagement />} />
+            <Route path="/admin/configuracion/clientes" element={<ClientManagement />} />
+            <Route path="/admin/configuracion/reservas" element={<BookingSettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
