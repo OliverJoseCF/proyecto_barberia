@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import logoImage from "@/assets/logo.png";
+import logoImage from "@/assets/logo1.jpg";
 import LetterSwapForward from "./letter-swap-forward-anim";
 
 const Navigation = () => {

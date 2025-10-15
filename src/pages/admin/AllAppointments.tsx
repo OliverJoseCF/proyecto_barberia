@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,14 @@ import { AppointmentCardSkeleton } from '@/components/ui/loading-skeletons';
 import ReprogramacionCita from '@/components/ReprogramacionCita';
 import { useCitas } from '@/hooks/use-citas';
 import { supabase, type Cita } from '@/lib/supabase';
+import { 
+  pageHeaderAnimation,
+  cardVariants,
+  backButtonAnimation,
+  buttonHoverAnimation,
+  buttonTapAnimation,
+  glassEffectClasses
+} from '@/lib/animations';
 import { 
   Calendar, 
   Clock, 
@@ -188,10 +197,16 @@ const AllAppointments = () => {
               }
               return [...prev, nuevaCita];
             });
-            toast.success('📅 Nueva cita agregada');
+            
+            // Notificación mejorada con más detalles
+            toast.success(`📅 Nueva cita: ${nuevaCita.cliente_nombre}`, {
+              description: `${nuevaCita.fecha} • ${nuevaCita.hora} • ${nuevaCita.servicio}`,
+              duration: 5000,
+            });
           } 
           else if (payload.eventType === 'UPDATE') {
             const citaActualizada = payload.new as Cita;
+            const citaAnterior = payload.old as Cita;
             console.log('✏️ Cita actualizada:', citaActualizada);
             
             // Verificar si es cita del barbero (si no es admin)
@@ -203,12 +218,31 @@ const AllAppointments = () => {
             setCitas(prev => 
               prev.map(c => c.id === citaActualizada.id ? citaActualizada : c)
             );
+            
+            // Notificación mejorada según el cambio
+            if (citaAnterior.estado !== citaActualizada.estado) {
+              toast.info(`✏️ Estado actualizado: ${citaActualizada.cliente_nombre}`, {
+                description: `${citaAnterior.estado} → ${citaActualizada.estado}`,
+                duration: 4000,
+              });
+            } else if (citaAnterior.fecha !== citaActualizada.fecha || citaAnterior.hora !== citaActualizada.hora) {
+              toast.info(`📆 Cita reprogramada: ${citaActualizada.cliente_nombre}`, {
+                description: `Nueva fecha: ${citaActualizada.fecha} a las ${citaActualizada.hora}`,
+                duration: 4000,
+              });
+            }
           } 
           else if (payload.eventType === 'DELETE') {
             const citaEliminada = payload.old as Cita;
             console.log('🗑️ Cita eliminada:', citaEliminada);
             
             setCitas(prev => prev.filter(c => c.id !== citaEliminada.id));
+            
+            // Notificación de eliminación
+            toast.error(`🗑️ Cita eliminada: ${citaEliminada.cliente_nombre}`, {
+              description: `${citaEliminada.fecha} a las ${citaEliminada.hora}`,
+              duration: 4000,
+            });
           }
         }
       )
@@ -506,41 +540,63 @@ const AllAppointments = () => {
     <PageTransition>
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <header className="bg-card border-b border-gold/20 sticky top-0 z-50 backdrop-blur-md">
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="bg-card border-b border-gold/20 sticky top-0 z-50 backdrop-blur-md"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/admin/dashboard')}
-                className="text-gold hover:text-gold/80"
+            <div className="flex items-center justify-between">
+              <motion.div
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.3 }}
+                className="flex items-center gap-3"
               >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <Scissors className="h-8 w-8 text-gold" />
-              <div>
-                <h1 className="font-display text-2xl gradient-gold bg-clip-text text-transparent">
-                  Todas las Citas
-                </h1>
-                <p className="font-elegant text-sm text-muted-foreground">
-                  {barberoData ? (
-                    <span>
-                      {barberoData.nombre} - {barberoData.rol === 'admin' ? 'Todas las citas' : 'Mis citas'}
-                    </span>
-                  ) : (
-                    'Gestión completa de citas'
-                  )}
-                </p>
-              </div>
-            </div>
+                <motion.div {...backButtonAnimation}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate('/admin/dashboard')}
+                    className="text-gold hover:text-gold/80"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                </motion.div>
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Scissors className="h-8 w-8 text-gold" />
+                </motion.div>
+                <div>
+                  <h1 className="font-display text-2xl gradient-gold bg-clip-text text-transparent">
+                    Todas las Citas
+                  </h1>
+                  <p className="font-elegant text-sm text-muted-foreground">
+                    {barberoData ? (
+                      <span>
+                        {barberoData.nombre} - {barberoData.rol === 'admin' ? 'Todas las citas' : 'Mis citas'}
+                      </span>
+                    ) : (
+                      'Gestión completa de citas'
+                    )}
+                  </p>
+                </div>
+              </motion.div>
           </div>
         </div>
-      </header>
+        </motion.header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filters */}
-        <Card className="glass-effect border-gold/20 mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
+          <Card className="glass-effect border-gold/20 mb-6">
           <CardHeader>
             <CardTitle className="font-display text-xl gradient-gold bg-clip-text text-transparent">
               Filtros y Búsqueda
@@ -583,48 +639,43 @@ const AllAppointments = () => {
               
               {/* Filtros por estado */}
               <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={filterEstado === 'todas' ? 'default' : 'outline'}
-                  onClick={() => setFilterEstado('todas')}
-                  className={filterEstado === 'todas' ? 'gradient-gold' : 'border-gold/20'}
-                >
-                  Todas ({citas.length})
-                </Button>
-                <Button
-                  variant={filterEstado === 'pendiente' ? 'default' : 'outline'}
-                  onClick={() => setFilterEstado('pendiente')}
-                  className={filterEstado === 'pendiente' ? 'bg-yellow-500 hover:bg-yellow-600' : 'border-gold/20'}
-                >
-                  Pendientes ({citas.filter(c => c.estado === 'pendiente').length})
-                </Button>
-                <Button
-                  variant={filterEstado === 'confirmada' ? 'default' : 'outline'}
-                  onClick={() => setFilterEstado('confirmada')}
-                  className={filterEstado === 'confirmada' ? 'bg-green-500 hover:bg-green-600' : 'border-gold/20'}
-                >
-                  Confirmadas ({citas.filter(c => c.estado === 'confirmada').length})
-                </Button>
-                <Button
-                  variant={filterEstado === 'completada' ? 'default' : 'outline'}
-                  onClick={() => setFilterEstado('completada')}
-                  className={filterEstado === 'completada' ? 'bg-blue-500 hover:bg-blue-600' : 'border-gold/20'}
-                >
-                  Completadas ({citas.filter(c => c.estado === 'completada').length})
-                </Button>
-                <Button
-                  variant={filterEstado === 'cancelada' ? 'default' : 'outline'}
-                  onClick={() => setFilterEstado('cancelada')}
-                  className={filterEstado === 'cancelada' ? 'bg-red-500 hover:bg-red-600' : 'border-gold/20'}
-                >
-                  Canceladas ({citas.filter(c => c.estado === 'cancelada').length})
-                </Button>
+                {[
+                  { estado: 'todas', label: 'Todas', className: 'gradient-gold', count: citas.length },
+                  { estado: 'pendiente', label: 'Pendientes', className: 'bg-yellow-500 hover:bg-yellow-600', count: citas.filter(c => c.estado === 'pendiente').length },
+                  { estado: 'confirmada', label: 'Confirmadas', className: 'bg-green-500 hover:bg-green-600', count: citas.filter(c => c.estado === 'confirmada').length },
+                  { estado: 'completada', label: 'Completadas', className: 'bg-blue-500 hover:bg-blue-600', count: citas.filter(c => c.estado === 'completada').length },
+                  { estado: 'cancelada', label: 'Canceladas', className: 'bg-red-500 hover:bg-red-600', count: citas.filter(c => c.estado === 'cancelada').length }
+                ].map((filter, idx) => (
+                  <motion.div
+                    key={filter.estado}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 + idx * 0.05, duration: 0.2 }}
+                    whileHover={{ scale: 1.05, transition: { duration: 0.15 } }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button
+                      variant={filterEstado === filter.estado ? 'default' : 'outline'}
+                      onClick={() => setFilterEstado(filter.estado)}
+                      className={filterEstado === filter.estado ? filter.className : 'border-gold/20'}
+                    >
+                      {filter.label} ({filter.count})
+                    </Button>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </CardContent>
         </Card>
+        </motion.div>
 
         {/* Results */}
-        <Card className="glass-effect border-gold/20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
+          <Card className="glass-effect border-gold/20">
           <CardHeader>
             <CardTitle className="font-display text-2xl gradient-gold bg-clip-text text-transparent">
               Resultados: {filteredCitas.length} citas
@@ -640,11 +691,27 @@ const AllAppointments = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredCitas.map((cita) => (
-                  <div
-                    key={cita.id}
-                    className="grid grid-cols-12 gap-2 items-center p-3 rounded-lg border border-gold/10 bg-card/50 hover:bg-card/80 transition-all"
-                  >
+                <AnimatePresence mode="popLayout">
+                  {filteredCitas.map((cita, index) => (
+                    <motion.div
+                      key={cita.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, x: -100 }}
+                      transition={{ 
+                        delay: Math.min(index * 0.03, 0.3),
+                        duration: 0.3,
+                        layout: { duration: 0.2 }
+                      }}
+                      whileHover={{ 
+                        scale: 1.01, 
+                        x: 5,
+                        boxShadow: "0 4px 20px rgba(212, 175, 55, 0.15)",
+                        transition: { duration: 0.15 }
+                      }}
+                      className="grid grid-cols-12 gap-2 items-center p-3 rounded-lg border border-gold/10 bg-card/50 hover:bg-card/80 hover:border-gold/30 transition-colors cursor-pointer"
+                    >
                     {/* Fecha - 2 columnas */}
                     <div className="col-span-6 md:col-span-2">
                       <p className="font-elegant text-sm text-muted-foreground mb-1">Fecha</p>
@@ -786,12 +853,14 @@ const AllAppointments = () => {
                         <div className="h-8"></div>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
+                </AnimatePresence>
               </div>
             )}
           </CardContent>
         </Card>
+        </motion.div>
       </main>
 
       {/* Modal de Reprogramación */}

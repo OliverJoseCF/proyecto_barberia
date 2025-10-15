@@ -5,6 +5,10 @@ import { ArrowLeft, Scissors } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 import PageTransition from '@/components/ui/PageTransition';
+import { 
+  pageHeaderAnimation,
+  backButtonAnimation
+} from '@/lib/animations';
 
 interface BarberoData {
   nombre: string;
@@ -51,19 +55,32 @@ const Statistics = () => {
       <motion.header 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
         className="bg-card border-b border-gold/20 sticky top-0 z-50 backdrop-blur-md"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/admin/dashboard')}
-                className="text-gold hover:text-gold/80"
+            <motion.div 
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.1, duration: 0.3 }}
+              className="flex items-center gap-3"
+            >
+              <motion.div {...backButtonAnimation}>
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate('/admin/dashboard')}
+                  className="text-gold hover:text-gold/80"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </motion.div>
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <Scissors className="h-8 w-8 text-gold" />
+                <Scissors className="h-8 w-8 text-gold" />
+              </motion.div>
               <div>
                 <h1 className="font-display text-2xl gradient-gold bg-clip-text text-transparent">
                   Estadísticas
@@ -78,7 +95,7 @@ const Statistics = () => {
                   )}
                 </p>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </motion.header>
@@ -89,7 +106,7 @@ const Statistics = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
         >
           <AnalyticsDashboard 
             barberoNombre={barberoData.nombre}

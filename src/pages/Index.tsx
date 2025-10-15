@@ -26,7 +26,7 @@ const Index = () => {
     title: "CantaBarba Studio - Barbería Tradicional | Cortes Profesionales",
     description: "Barbería tradicional desde 1995. Cortes profesionales, afeitado clásico y estilo único. Agenda tu cita en CantaBarba Studio.",
     keywords: "barbería, cortes de cabello, afeitado, estilo masculino, tradición, profesional",
-    image: "/assets/logo.png"
+  image: "/assets/logo1.jpg"
   });
 
   return (

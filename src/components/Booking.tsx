@@ -175,6 +175,30 @@ const Booking = () => {
       setErrors({});
     } catch (err: any) {
       console.error('Error al guardar cita:', err);
+      
+      // Detectar error de doble reserva (constraint único)
+      if (err.message?.includes('duplicate key') || 
+          err.message?.includes('idx_unique_cita_fecha_hora_barbero') ||
+          err.message?.includes('violates unique constraint')) {
+        toast({ 
+          title: "⚠️ Horario no disponible", 
+          description: "Este horario acaba de ser reservado por otro cliente. Por favor elige otro horario.",
+          variant: "destructive",
+          duration: 5000,
+        });
+        
+        // Recargar disponibilidad automáticamente
+        if (formData.fecha && formData.barbero) {
+          console.log('🔄 Recargando disponibilidad...');
+          checkAvailability(formData.fecha, formData.barbero);
+        }
+        
+        // Limpiar solo el campo de hora
+        setFormData(prev => ({ ...prev, hora: '' }));
+        return;
+      }
+      
+      // Otros errores
       toast({ 
         title: "Error al enviar reserva", 
         description: err.message || "No se pudo enviar la reserva. Por favor, intenta de nuevo o llámanos directamente.",
@@ -313,6 +337,7 @@ const Booking = () => {
                     type="date"
                     value={formData.fecha}
                     min={new Date().toISOString().split('T')[0]}
+                    max={new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} // Máximo 90 días adelante
                     aria-invalid={!!errors.fecha}
                     aria-describedby="error-fecha"
                     onChange={(e) => setFormData({...formData, fecha: e.target.value})}

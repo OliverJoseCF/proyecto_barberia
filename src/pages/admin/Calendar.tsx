@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import PageTransition from '@/components/ui/PageTransition';
 import { useCitas } from '@/hooks/use-citas';
 import { supabase, type Cita } from '@/lib/supabase';
+import { 
+  pageHeaderAnimation,
+  cardVariants,
+  backButtonAnimation,
+  glassEffectClasses
+} from '@/lib/animations';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -31,6 +38,7 @@ const CalendarView = () => {
   const [citas, setCitas] = useState<Cita[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     checkSessionAndLoadCitas();
@@ -227,11 +235,19 @@ const CalendarView = () => {
   };
 
   const previousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+      setIsTransitioning(false);
+    }, 150);
   };
 
   const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+      setIsTransitioning(false);
+    }, 150);
   };
 
   const monthName = currentDate.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
@@ -249,18 +265,36 @@ const CalendarView = () => {
   return (
     <PageTransition>
       {/* Header */}
-      <header className="bg-card border-b border-gold/20 sticky top-0 z-50 backdrop-blur-md">
+      <motion.header
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="bg-card border-b border-gold/20 sticky top-0 z-50 backdrop-blur-md"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="flex items-center gap-3"
+            >
               <Button
                 variant="ghost"
                 onClick={() => navigate('/admin/dashboard')}
                 className="text-gold hover:text-gold/80"
+                asChild
               >
-                <ArrowLeft className="h-5 w-5" />
+                <motion.button whileHover={{ x: -5 }} transition={{ duration: 0.2 }}>
+                  <ArrowLeft className="h-5 w-5" />
+                </motion.button>
               </Button>
-              <Scissors className="h-8 w-8 text-gold" />
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Scissors className="h-8 w-8 text-gold" />
+              </motion.div>
               <div>
                 <h1 className="font-display text-2xl gradient-gold bg-clip-text text-transparent">
                   Calendario
@@ -275,67 +309,105 @@ const CalendarView = () => {
                   )}
                 </p>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+        >
           {/* Calendar */}
           <div className="lg:col-span-2">
             <Card className="glass-effect border-gold/20">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="font-display text-2xl gradient-gold bg-clip-text text-transparent capitalize">
-                    {monthName}
-                  </CardTitle>
+                  <motion.div
+                    key={monthName}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <CardTitle className="font-display text-2xl gradient-gold bg-clip-text text-transparent capitalize">
+                      {monthName}
+                    </CardTitle>
+                  </motion.div>
                   <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={previousMonth}
-                      className="border-gold/20"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={nextMonth}
-                      className="border-gold/20"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={previousMonth}
+                        disabled={isTransitioning}
+                        className="border-gold/20"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={nextMonth}
+                        disabled={isTransitioning}
+                        className="border-gold/20"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </motion.div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 {/* Days of week */}
                 <div className="grid grid-cols-7 gap-2 mb-2">
-                  {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-                    <div key={day} className="text-center font-elegant text-sm text-muted-foreground py-2">
+                  {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day, idx) => (
+                    <motion.div 
+                      key={day}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.02, duration: 0.2 }}
+                      className="text-center font-elegant text-sm text-muted-foreground py-2"
+                    >
                       {day}
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
                 
                 {/* Calendar days */}
-                <div className="grid grid-cols-7 gap-2">
+                <AnimatePresence mode="wait">
+                  <motion.div 
+                    key={monthName}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.2 }}
+                    className="grid grid-cols-7 gap-2"
+                  >
                   {days.map((day, index) => {
                     const dayCitas = day.date ? getCitasForDate(day.date) : [];
                     const isSelected = day.date === selectedDate;
                     
                     return (
-                      <button
+                      <motion.button
                         key={index}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.01, duration: 0.15 }}
+                        whileHover={day.day ? { scale: 1.05, transition: { duration: 0.15 } } : {}}
+                        whileTap={day.day ? { scale: 0.95 } : {}}
                         onClick={() => day.date && setSelectedDate(day.date)}
                         disabled={!day.day}
                         className={`
                           aspect-square p-2 rounded-lg border transition-all
                           ${!day.day ? 'invisible' : ''}
-                          ${isSelected ? 'border-gold bg-gold/10' : 'border-gold/10 hover:border-gold/30'}
+                          ${isSelected ? 'border-gold bg-gold/10 shadow-lg shadow-gold/20' : 'border-gold/10 hover:border-gold/30 hover:shadow-md'}
                           ${day.isToday ? 'ring-2 ring-gold/50' : ''}
                           ${dayCitas.length > 0 ? 'bg-card/50' : 'bg-background'}
                         `}
@@ -358,10 +430,11 @@ const CalendarView = () => {
                             </div>
                           )}
                         </div>
-                      </button>
+                      </motion.button>
                     );
                   })}
-                </div>
+                  </motion.div>
+                </AnimatePresence>
               </CardContent>
             </Card>
           </div>
@@ -390,13 +463,25 @@ const CalendarView = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {selectedDateCitas.length > 0 ? (
-                  <div className="space-y-3">
-                    {selectedDateCitas.map((cita) => (
-                      <div
-                        key={cita.id}
-                        className="p-3 rounded-lg border border-gold/10 bg-card/50"
-                      >
+                <AnimatePresence mode="wait">
+                  {selectedDateCitas.length > 0 ? (
+                    <motion.div 
+                      key={selectedDate}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.3 }}
+                      className="space-y-3"
+                    >
+                      {selectedDateCitas.map((cita, idx) => (
+                        <motion.div
+                          key={cita.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05, duration: 0.2 }}
+                          whileHover={{ scale: 1.02, x: 3, transition: { duration: 0.15 } }}
+                          className="p-3 rounded-lg border border-gold/10 bg-card/50 hover:bg-card/80 hover:border-gold/30 transition-colors cursor-pointer"
+                        >
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-display text-gold flex items-center gap-2">
                             <Clock className="h-4 w-4" />
@@ -413,53 +498,75 @@ const CalendarView = () => {
                         <p className="font-elegant text-xs text-muted-foreground">
                           {cita.servicio} - {cita.barbero}
                         </p>
-                      </div>
+                      </motion.div>
                     ))}
-                  </div>
-                ) : selectedDate ? (
-                  <div className="text-center py-8">
+                    </motion.div>
+                  ) : selectedDate ? (
+                    <motion.div
+                      key="no-citas"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-center py-8"
+                    >
                     <CalendarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
                     <p className="font-elegant text-muted-foreground text-sm">
                       No hay citas programadas para este día
                     </p>
-                  </div>
+                  </motion.div>
                 ) : (
-                  <div className="text-center py-8">
+                  <motion.div
+                    key="select-date"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-center py-8"
+                  >
                     <CalendarIcon className="h-12 w-12 text-gold mx-auto mb-3 opacity-50" />
                     <p className="font-elegant text-muted-foreground text-sm">
                       Selecciona un día en el calendario para ver sus citas
                     </p>
-                  </div>
+                  </motion.div>
                 )}
+                </AnimatePresence>
               </CardContent>
             </Card>
 
             {/* Legend */}
-            <Card className="glass-effect border-gold/20 mt-4">
-              <CardHeader>
-                <CardTitle className="font-display text-sm">Leyenda</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span className="font-elegant text-sm">Confirmada</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <span className="font-elegant text-sm">Pendiente</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" />
-                  <span className="font-elegant text-sm">Completada</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <span className="font-elegant text-sm">Cancelada</span>
-                </div>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
+            >
+              <Card className="glass-effect border-gold/20 mt-4">
+                <CardHeader>
+                  <CardTitle className="font-display text-sm">Leyenda</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {[
+                    { color: 'bg-green-500', label: 'Confirmada' },
+                    { color: 'bg-yellow-500', label: 'Pendiente' },
+                    { color: 'bg-blue-500', label: 'Completada' },
+                    { color: 'bg-red-500', label: 'Cancelada' }
+                  ].map((item, idx) => (
+                    <motion.div
+                      key={item.label}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.6 + idx * 0.05, duration: 0.2 }}
+                      className="flex items-center gap-2"
+                    >
+                      <div className={`w-3 h-3 rounded-full ${item.color}`} />
+                      <span className="font-elegant text-sm">{item.label}</span>
+                    </motion.div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </main>
     </PageTransition>
   );

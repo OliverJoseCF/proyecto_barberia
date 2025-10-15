@@ -16,7 +16,7 @@ const DEFAULT_SEO: Required<SEOProps> = {
   title: 'CantaBarba Studio - La idea es tuya, nosotros hacemos la magia',
   description: 'CantaBarba Studio - Barbería profesional en CDMX. Cortes modernos, afeitado clásico, tratamientos de barba y mucho más. Reserva tu cita.',
   keywords: 'barbería, corte cabello, afeitado, barba, CDMX, México, CantaBarba Studio, barbero profesional, corte moderno, tratamiento barba',
-  image: '/src/assets/logo.png',
+  image: '/src/assets/logo1.jpg',
   url: 'https://cantabarba-studio.com',
   type: 'business',
   author: 'CantaBarba Studio',
@@ -125,8 +125,8 @@ export const useStructuredData = (type: 'LocalBusiness' | 'Service' | 'Person' =
           'Su 10:00-16:00'
         ],
         priceRange: '$$',
-        image: '/src/assets/logo.png',
-        logo: '/src/assets/logo.png',
+  image: '/src/assets/logo1.jpg',
+  logo: '/src/assets/logo1.jpg',
         sameAs: [
           'https://www.instagram.com/cantabarba_studio',
           'https://www.facebook.com/cantabarba.studio'

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import PageTransition from '@/components/ui/PageTransition';
@@ -8,6 +9,14 @@ import {
   SimpleBarChart, 
   RevenueChart
 } from '@/components/ui/dashboard-metrics';
+import { 
+  pageHeaderAnimation,
+  backButtonAnimation,
+  cardHoverAnimation,
+  buttonHoverAnimation,
+  buttonTapAnimation,
+  glassEffectClasses
+} from '@/lib/animations';
 import { 
   Calendar, 
   Clock, 
@@ -25,10 +34,11 @@ import {
   Users,
   Star,
   Trash2,
-  CalendarDays
+  CalendarDays,
+  FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
-import logoImage from '@/assets/logo.png';
+import logoImage from '@/assets/logo1.jpg';
 import { supabase, type Cita } from '@/lib/supabase';
 import { useCitas } from '@/hooks/use-citas';
 import { useServicios } from '@/hooks/use-servicios';
@@ -569,11 +579,26 @@ const AdminDashboard = () => {
   return (
     <PageTransition>
       {/* Header */}
-      <header className="bg-card border-b border-gold/20 sticky top-0 z-50 backdrop-blur-md">
+      <motion.header
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="bg-card border-b border-gold/20 sticky top-0 z-50 backdrop-blur-md"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Scissors className="h-8 w-8 text-gold" />
+            <motion.div
+              initial={{ x: -50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="flex items-center gap-3"
+            >
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Scissors className="h-8 w-8 text-gold" />
+              </motion.div>
               <div>
                 <h1 className="font-display text-2xl gradient-gold bg-clip-text text-transparent">
                   Panel de Administración
@@ -588,104 +613,120 @@ const AdminDashboard = () => {
                   )}
                 </p>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
+            </motion.div>
+            <motion.div
+              initial={{ x: 50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="flex items-center gap-4"
+            >
               <Button
                 variant="ghost"
                 onClick={() => navigate('/')}
                 className="text-gold hover:text-gold/80 font-elegant"
+                asChild
               >
-                <Menu className="h-5 w-5 mr-2" />
-                Ir al sitio
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Menu className="h-5 w-5 mr-2" />
+                  Ir al sitio
+                </motion.button>
               </Button>
               <Button
                 variant="outline"
                 onClick={handleLogout}
                 className="border-gold/50 text-gold hover:bg-gold/10 font-elegant"
+                asChild
               >
-                <LogOut className="h-5 w-5 mr-2" />
-                Cerrar sesión
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <LogOut className="h-5 w-5 mr-2" />
+                  Cerrar sesión
+                </motion.button>
               </Button>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="glass-effect border-gold/20">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-elegant text-sm font-medium text-muted-foreground">
-                Total Hoy
-              </CardTitle>
-              <Calendar className="h-5 w-5 text-gold" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-display gradient-gold bg-clip-text text-transparent">
-                {stats.totalHoy}
-              </div>
-              <p className="text-xs text-muted-foreground font-elegant mt-1">
-                Citas programadas
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-effect border-green-500/20">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-elegant text-sm font-medium text-muted-foreground">
-                Confirmadas
-              </CardTitle>
-              <CheckCircle className="h-5 w-5 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-display text-green-500">
-                {stats.confirmadas}
-              </div>
-              <p className="text-xs text-muted-foreground font-elegant mt-1">
-                Total confirmadas
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-effect border-yellow-500/20">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-elegant text-sm font-medium text-muted-foreground">
-                Pendientes
-              </CardTitle>
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-display text-yellow-500">
-                {stats.pendientes}
-              </div>
-              <p className="text-xs text-muted-foreground font-elegant mt-1">
-                Total pendientes
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-effect border-red-500/20">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-elegant text-sm font-medium text-muted-foreground">
-                Canceladas
-              </CardTitle>
-              <XCircle className="h-5 w-5 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-display text-red-500">
-                {stats.canceladas}
-              </div>
-              <p className="text-xs text-muted-foreground font-elegant mt-1">
-                Total canceladas
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        >
+          {[
+            {
+              title: "Total Hoy",
+              value: stats.totalHoy,
+              description: "Citas programadas",
+              icon: <Calendar className="h-5 w-5 text-gold" />,
+              color: "gold"
+            },
+            {
+              title: "Confirmadas",
+              value: stats.confirmadas,
+              description: "Total confirmadas",
+              icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+              color: "green"
+            },
+            {
+              title: "Pendientes",
+              value: stats.pendientes,
+              description: "Total pendientes",
+              icon: <AlertCircle className="h-5 w-5 text-yellow-500" />,
+              color: "yellow"
+            },
+            {
+              title: "Canceladas",
+              value: stats.canceladas,
+              description: "Total canceladas",
+              icon: <XCircle className="h-5 w-5 text-red-500" />,
+              color: "red"
+            }
+          ].map((stat, index) => (
+            <motion.div
+              key={stat.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ 
+                delay: 0.3 + (index * 0.1), 
+                duration: 0.3
+              }}
+              whileHover={{ 
+                y: -5,
+                transition: { duration: 0.2 }
+              }}
+              className="group"
+            >
+              <Card className={`glass-effect border-${stat.color === 'gold' ? 'gold' : stat.color + '-500'}/20 hover:border-${stat.color === 'gold' ? 'gold' : stat.color + '-500'}/40 transition-all duration-200`}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="font-elegant text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </CardTitle>
+                  {stat.icon}
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-3xl font-display mb-1 ${stat.color === 'gold' ? 'gradient-gold bg-clip-text text-transparent' : 'text-' + stat.color + '-500'}`}>
+                    {stat.value}
+                  </div>
+                  <p className="text-xs text-muted-foreground font-elegant mt-1 group-hover:text-muted-foreground/80 transition-colors duration-200">
+                    {stat.description}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
 
         {/* Métricas Avanzadas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.5 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
+        >
           <MetricCard
             title="Citas del Mes"
             value={metricas.totalCitas}
@@ -709,20 +750,30 @@ const AdminDashboard = () => {
             trend={metricas.trends.ingresosPromedio}
             icon={<Star className="h-4 w-4" />}
           />
-        </div>
+        </motion.div>
 
         {/* Gráficos y Análisis */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.1, duration: 0.5 }}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"
+        >
           <RevenueChart monthlyData={metricas.ingresosMensuales} />
           
           <SimpleBarChart
             data={metricas.serviciosPopulares}
             title="Servicios Más Populares"
           />
-        </div>
+        </motion.div>
 
         {/* Sistema de Recordatorios - REEMPLAZADO POR RESUMEN Y PRÓXIMAS CITAS */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.3, duration: 0.5 }}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"
+        >
           {/* Resumen General */}
           <Card className="glass-effect border-gold/20">
             <CardHeader>
@@ -733,7 +784,13 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                  className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20 hover:border-green-500/30 transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500" />
                     <div>
@@ -741,9 +798,15 @@ const AdminDashboard = () => {
                       <p className="font-display text-2xl text-green-500">{stats.confirmadas}</p>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                  className="flex items-center justify-between p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 hover:border-yellow-500/30 transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <Clock className="h-5 w-5 text-yellow-500" />
                     <div>
@@ -751,9 +814,15 @@ const AdminDashboard = () => {
                       <p className="font-display text-2xl text-yellow-500">{stats.pendientes}</p>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                  className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/20 hover:border-red-500/30 transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <XCircle className="h-5 w-5 text-red-500" />
                     <div>
@@ -761,9 +830,15 @@ const AdminDashboard = () => {
                       <p className="font-display text-2xl text-red-500">{stats.canceladas}</p>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gold/10 border border-gold/20">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                  className="flex items-center justify-between p-3 rounded-lg bg-gold/10 border border-gold/20 hover:border-gold/30 transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <Scissors className="h-5 w-5 text-gold" />
                     <div>
@@ -771,7 +846,7 @@ const AdminDashboard = () => {
                       <p className="font-display text-2xl text-gold">{stats.totalHoy}</p>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </div>
             </CardContent>
           </Card>
@@ -801,10 +876,14 @@ const AdminDashboard = () => {
                     .filter(c => c.estado !== 'cancelada')
                     .sort((a, b) => a.hora.localeCompare(b.hora))
                     .slice(0, 3)
-                    .map((cita) => (
-                      <div 
+                    .map((cita, index) => (
+                      <motion.div 
                         key={cita.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors border border-gold/10"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1, duration: 0.3 }}
+                        whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors border border-gold/10 hover:border-gold/20"
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col items-center justify-center bg-gold/20 rounded-lg p-2 min-w-[60px]">
@@ -825,21 +904,26 @@ const AdminDashboard = () => {
                         <span className={`px-2 py-1 rounded-full text-xs font-elegant border ${getEstadoBadge(cita.estado)}`}>
                           {cita.estado.toUpperCase()}
                         </span>
-                      </div>
+                      </motion.div>
                     ))}
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
 
         {/* Horarios Pico */}
-        <div className="mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5, duration: 0.5 }}
+          className="mb-8"
+        >
           <SimpleBarChart
             data={metricas.horariosPico}
             title="Horarios de Mayor Demanda"
           />
-        </div>
+        </motion.div>
 
         {/* Citas del Día */}
         <Card className="glass-effect border-gold/20">
@@ -865,10 +949,14 @@ const AdminDashboard = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {citas.map((cita) => (
-                  <div
+                {citas.map((cita, index) => (
+                  <motion.div
                     key={cita.id}
-                    className="grid grid-cols-12 gap-4 items-center p-4 rounded-lg border border-gold/10 bg-card/50 hover:bg-card/80 transition-all"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.3 }}
+                    whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                    className="grid grid-cols-12 gap-4 items-center p-4 rounded-lg border border-gold/10 bg-card/50 hover:bg-card/70 hover:border-gold/20 transition-all duration-200"
                   >
                     {/* Cliente - 2 columnas */}
                     <div className="col-span-12 md:col-span-2">
@@ -910,69 +998,81 @@ const AdminDashboard = () => {
                     <div className="col-span-12 md:col-span-4 flex items-center gap-3 justify-end">
                       {cita.estado === 'pendiente' ? (
                         <>
-                          <Button
-                            size="sm"
-                            onClick={() => actualizarEstado(cita.id, 'confirmada')}
-                            className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 h-8"
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Confirmar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => actualizarEstado(cita.id, 'cancelada')}
-                            className="text-xs px-3 py-1 h-8"
-                          >
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Cancelar
-                          </Button>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.15 }}>
+                            <Button
+                              size="sm"
+                              onClick={() => actualizarEstado(cita.id, 'confirmada')}
+                              className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 h-8 transition-all duration-200"
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Confirmar
+                            </Button>
+                          </motion.div>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.15 }}>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => actualizarEstado(cita.id, 'cancelada')}
+                              className="text-xs px-3 py-1 h-8 transition-all duration-200"
+                            >
+                              <XCircle className="h-3 w-3 mr-1" />
+                              Cancelar
+                            </Button>
+                          </motion.div>
                         </>
                       ) : cita.estado === 'confirmada' ? (
                         <>
-                          <Button
-                            size="sm"
-                            onClick={() => actualizarEstado(cita.id, 'completada')}
-                            className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 h-8"
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Completar
-                          </Button>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.15 }}>
+                            <Button
+                              size="sm"
+                              onClick={() => actualizarEstado(cita.id, 'completada')}
+                              className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 h-8 transition-all duration-200"
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Completar
+                            </Button>
+                          </motion.div>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.15 }}>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => actualizarEstado(cita.id, 'cancelada')}
+                              className="text-xs px-3 py-1 h-8 transition-all duration-200"
+                            >
+                              <XCircle className="h-3 w-3 mr-1" />
+                              Cancelar
+                            </Button>
+                          </motion.div>
+                        </>
+                      ) : cita.estado === 'completada' ? (
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.15 }}>
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => actualizarEstado(cita.id, 'cancelada')}
-                            className="text-xs px-3 py-1 h-8"
+                            onClick={() => eliminarCita(cita.id)}
+                            className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 h-8 transition-all duration-200"
                           >
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Cancelar
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Eliminar Cita
                           </Button>
-                        </>
-                      ) : cita.estado === 'completada' ? (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => eliminarCita(cita.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 h-8"
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Eliminar Cita
-                        </Button>
+                        </motion.div>
                       ) : cita.estado === 'cancelada' ? (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => eliminarCita(cita.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 h-8"
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Eliminar Cita
-                        </Button>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.15 }}>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => eliminarCita(cita.id)}
+                            className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 h-8 transition-all duration-200"
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Eliminar Cita
+                          </Button>
+                        </motion.div>
                       ) : (
                         <div className="h-8"></div>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
@@ -980,32 +1080,74 @@ const AdminDashboard = () => {
         </Card>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-          <Button
-            variant="outline"
-            className="h-24 border-gold/50 hover:bg-gold/10 font-elegant text-lg"
-            onClick={() => navigate('/admin/citas')}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.4 }}
+          className={`grid grid-cols-1 md:grid-cols-2 ${barberoLogueado?.rol === 'admin' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6 mt-8`}
+        >
+          <motion.div 
+            whileHover={{ y: -5 }} 
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
           >
-            <Calendar className="h-6 w-6 mr-3 text-gold" />
-            Ver Todas las Citas
-          </Button>
-          <Button
-            variant="outline"
-            className="h-24 border-gold/50 hover:bg-gold/10 font-elegant text-lg"
-            onClick={() => navigate('/admin/calendario')}
+            <Button
+              variant="outline"
+              className="w-full h-24 border-gold/50 hover:bg-gold/10 hover:border-gold font-elegant text-lg transition-all duration-200"
+              onClick={() => navigate('/admin/citas')}
+            >
+              <Calendar className="h-6 w-6 mr-3 text-gold" />
+              Ver Todas las Citas
+            </Button>
+          </motion.div>
+          
+          <motion.div 
+            whileHover={{ y: -5 }} 
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
           >
-            <Clock className="h-6 w-6 mr-3 text-gold" />
-            Calendario
-          </Button>
-          <Button
-            variant="outline"
-            className="h-24 border-gold/50 hover:bg-gold/10 font-elegant text-lg"
-            onClick={() => navigate('/admin/estadisticas')}
+            <Button
+              variant="outline"
+              className="w-full h-24 border-gold/50 hover:bg-gold/10 hover:border-gold font-elegant text-lg transition-all duration-200"
+              onClick={() => navigate('/admin/calendario')}
+            >
+              <Clock className="h-6 w-6 mr-3 text-gold" />
+              Calendario
+            </Button>
+          </motion.div>
+          
+          <motion.div 
+            whileHover={{ y: -5 }} 
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
           >
-            <TrendingUp className="h-6 w-6 mr-3 text-gold" />
-            Estadísticas
-          </Button>
-        </div>
+            <Button
+              variant="outline"
+              className="w-full h-24 border-gold/50 hover:bg-gold/10 hover:border-gold font-elegant text-lg transition-all duration-200"
+              onClick={() => navigate('/admin/estadisticas')}
+            >
+              <TrendingUp className="h-6 w-6 mr-3 text-gold" />
+              Estadísticas
+            </Button>
+          </motion.div>
+          
+          {barberoLogueado?.rol === 'admin' && (
+            <motion.div 
+              whileHover={{ y: -5 }} 
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Button
+                variant="outline"
+                className="w-full h-24 border-gold/50 hover:bg-gold/10 hover:border-gold font-elegant text-lg transition-all duration-200"
+                onClick={() => navigate('/admin/auditoria')}
+              >
+                <FileText className="h-6 w-6 mr-3 text-gold" />
+                Auditoría
+              </Button>
+            </motion.div>
+          )}
+        </motion.div>
       </main>
     </PageTransition>
   );

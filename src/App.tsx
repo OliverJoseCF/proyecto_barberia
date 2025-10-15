@@ -14,6 +14,7 @@ const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const AllAppointments = lazy(() => import("./pages/admin/AllAppointments"));
 const CalendarView = lazy(() => import("./pages/admin/Calendar"));
 const Statistics = lazy(() => import("./pages/admin/Statistics"));
+const Auditoria = lazy(() => import("./pages/admin/Auditoria"));
 
 // Configuración optimizada de QueryClient
 const queryClient = new QueryClient({
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/admin/citas" element={<AllAppointments />} />
             <Route path="/admin/calendario" element={<CalendarView />} />
             <Route path="/admin/estadisticas" element={<Statistics />} />
+            <Route path="/admin/auditoria" element={<Auditoria />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

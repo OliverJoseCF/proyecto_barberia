@@ -138,19 +138,26 @@ export const useCitas = (): UseCitasReturn => {
   // ============================================
   const deleteCita = async (id: string): Promise<{ error: string | null }> => {
     try {
+      console.log('🗑️ [use-citas] Eliminando cita con ID:', id);
+      
       const { error: deleteError } = await supabase
         .from(TABLES.CITAS)
         .delete()
         .eq('id', id);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('❌ [use-citas] Error al eliminar:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('✅ [use-citas] Cita eliminada exitosamente de Supabase');
 
       // Actualizar lista local
       setCitas(prev => prev.filter(cita => cita.id !== id));
 
       return { error: null };
     } catch (err: any) {
-      console.error('Error al eliminar cita:', err);
+      console.error('❌ [use-citas] Error al eliminar cita:', err);
       return { error: err.message || 'Error al eliminar la cita' };
     }
   };

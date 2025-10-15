@@ -2,7 +2,7 @@ const CACHE_NAME = 'cantabarba-v1';
 const urlsToCache = [
   '/',
   '/manifest.json',
-  '/src/assets/logo.png',
+  '/src/assets/logo1.jpg',
   '/src/assets/fondochido1.jpg'
 ];
 

@@ -15,6 +15,7 @@ interface AnalyticsData {
   peakHours: Array<{ hour: string; appointments: number }>;
   monthlyRevenue: number;
   completionRate: number;
+  weekdayTrends: Array<{ day: string; count: number; percentage: number }>;
   trends: {
     appointments: number;
     revenue: number;
@@ -36,6 +37,7 @@ export const useAnalytics = (barberoNombre?: string, rol: 'admin' | 'barbero' = 
     peakHours: [],
     monthlyRevenue: 0,
     completionRate: 0,
+    weekdayTrends: [],
     trends: {
       appointments: 0,
       revenue: 0
@@ -108,17 +110,24 @@ export const useAnalytics = (barberoNombre?: string, rol: 'admin' | 'barbero' = 
         setLoading(true);
       }
       
+      console.log('📊 [Analytics] ========================================');
       console.log('📊 [Analytics] Cargando estadísticas...');
+      console.log('📊 [Analytics] Rol:', rol);
+      console.log('📊 [Analytics] Barbero:', barberoNombre);
 
       // Obtener todas las citas según el rol
       let todasCitas: Cita[] = [];
       if (rol === 'admin' || !barberoNombre) {
+        console.log('📊 [Analytics] Obteniendo TODAS las citas (admin)');
         todasCitas = await getCitas();
       } else {
+        console.log('📊 [Analytics] Obteniendo citas del barbero:', barberoNombre);
         todasCitas = await getCitasByBarbero(barberoNombre);
       }
 
       console.log(`📋 [Analytics] ${todasCitas.length} citas encontradas`);
+      console.log('📋 [Analytics] Primeras 5 citas:', todasCitas.slice(0, 5));
+      console.log('📊 [Analytics] ========================================');
 
       // Calcular estadísticas
       const hoy = new Date();
@@ -206,6 +215,28 @@ export const useAnalytics = (barberoNombre?: string, rol: 'admin' | 'barbero' = 
         ? Math.round(((ingresosMes - ingresosMesAnterior) / ingresosMesAnterior) * 100)
         : 0;
 
+      // Tendencia por día de la semana
+      const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const contadorDias: Record<number, number> = {};
+      
+      citasMesActual.forEach(cita => {
+        if (cita.estado !== 'cancelada') {
+          const fechaCita = new Date(cita.fecha);
+          const diaSemana = fechaCita.getDay();
+          contadorDias[diaSemana] = (contadorDias[diaSemana] || 0) + 1;
+        }
+      });
+
+      const totalCitasActivasMes = Object.values(contadorDias).reduce((a, b) => a + b, 0);
+      
+      const weekdayTrends = diasSemana.map((day, index) => ({
+        day,
+        count: contadorDias[index] || 0,
+        percentage: totalCitasActivasMes > 0 
+          ? Math.round((contadorDias[index] || 0) / totalCitasActivasMes * 100) 
+          : 0
+      })).sort((a, b) => b.count - a.count);
+
       setAnalytics({
         totalAppointments: todasCitas.length,
         appointmentsThisMonth: citasMesActual.length,
@@ -214,6 +245,7 @@ export const useAnalytics = (barberoNombre?: string, rol: 'admin' | 'barbero' = 
         peakHours: horariosPico,
         monthlyRevenue: ingresosMes,
         completionRate,
+        weekdayTrends,
         trends: {
           appointments: trendAppointments,
           revenue: trendRevenue
@@ -252,10 +284,11 @@ interface MetricCardProps {
 
 const MetricCard = ({ title, value, change, icon, color, delay = 0 }: MetricCardProps) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay, duration: 0.5 }}
-    className="bg-card/50 backdrop-blur-md rounded-lg p-6 shadow-sm border border-gold/20"
+    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ delay, duration: 0.4, ease: "easeOut" }}
+    whileHover={{ scale: 1.03, y: -5, transition: { duration: 0.2 } }}
+    className="bg-card/50 backdrop-blur-md rounded-lg p-6 shadow-sm border border-gold/20 hover:border-gold/40 hover:shadow-lg transition-all cursor-pointer"
   >
     <div className="flex items-center justify-between">
       <div>
@@ -318,9 +351,9 @@ export const AnalyticsDashboard = ({ barberoNombre, rol = 'barbero' }: Analytics
         />
         
         <MetricCard
-          title="Clientes Únicos"
-          value={analytics.totalCustomers}
-          icon={<Users className="h-6 w-6 text-white" />}
+          title="Día Más Popular"
+          value={analytics.weekdayTrends[0]?.count > 0 ? analytics.weekdayTrends[0]?.day : 'Sin datos'}
+          icon={<Calendar className="h-6 w-6 text-white" />}
           color="bg-purple-500"
           delay={0.2}
         />
@@ -357,8 +390,9 @@ export const AnalyticsDashboard = ({ barberoNombre, rol = 'barbero' }: Analytics
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.5 }}
-        className="bg-card/50 backdrop-blur-md rounded-lg p-6 shadow-sm border border-gold/20"
+        transition={{ delay: 0.6, duration: 0.4 }}
+        whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+        className="bg-card/50 backdrop-blur-md rounded-lg p-6 shadow-sm border border-gold/20 hover:border-gold/40 hover:shadow-lg transition-all"
       >
         <h3 className="text-lg font-semibold mb-4 text-foreground">
           Servicios Más Populares
@@ -366,7 +400,14 @@ export const AnalyticsDashboard = ({ barberoNombre, rol = 'barbero' }: Analytics
         <div className="space-y-3">
           {analytics.popularServices.length > 0 ? (
             analytics.popularServices.map((service, index) => (
-              <div key={index} className="flex items-center justify-between">
+              <motion.div 
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.7 + index * 0.05, duration: 0.3 }}
+                whileHover={{ x: 5, transition: { duration: 0.15 } }}
+                className="flex items-center justify-between"
+              >
                 <span className="text-sm text-muted-foreground">{service.name}</span>
                 <div className="flex items-center gap-3">
                   <div className="w-32 bg-muted/30 rounded-full h-2">
@@ -381,7 +422,7 @@ export const AnalyticsDashboard = ({ barberoNombre, rol = 'barbero' }: Analytics
                     {service.count}
                   </span>
                 </div>
-              </div>
+              </motion.div>
             ))
           ) : (
             <p className="text-sm text-muted-foreground text-center py-4">
@@ -395,23 +436,95 @@ export const AnalyticsDashboard = ({ barberoNombre, rol = 'barbero' }: Analytics
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, duration: 0.5 }}
-        className="bg-card/50 backdrop-blur-md rounded-lg p-6 shadow-sm border border-gold/20"
+        transition={{ delay: 0.7, duration: 0.4 }}
+        whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+        className="bg-card/50 backdrop-blur-md rounded-lg p-6 shadow-sm border border-gold/20 hover:border-gold/40 hover:shadow-lg transition-all"
       >
         <h3 className="text-lg font-semibold mb-4 text-foreground">
           Horarios Pico
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {analytics.peakHours.map((slot, index) => (
-            <div key={index} className="text-center">
+            <motion.div 
+              key={index}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.8 + index * 0.05, duration: 0.3 }}
+              whileHover={{ scale: 1.1, y: -5, transition: { duration: 0.15 } }}
+              className="text-center cursor-pointer"
+            >
               <div className="text-2xl font-bold text-gold">
                 {slot.appointments}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
                 {slot.hour}
               </div>
-            </div>
+            </motion.div>
           ))}
+        </div>
+      </motion.div>
+
+      {/* Tendencia por Día de Semana */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.4 }}
+        whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+        className="bg-card/50 backdrop-blur-md rounded-lg p-6 shadow-sm border border-gold/20 hover:border-gold/40 hover:shadow-lg transition-all"
+      >
+        <h3 className="text-lg font-semibold mb-4 text-foreground">
+          Tendencia de Reservas por Día de Semana
+        </h3>
+        <div className="space-y-3">
+          {analytics.weekdayTrends.length > 0 && analytics.weekdayTrends.some(d => d.count > 0) ? (
+            analytics.weekdayTrends.map((dayData, index) => (
+              <motion.div 
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.9 + index * 0.05, duration: 0.3 }}
+                whileHover={{ x: 5, transition: { duration: 0.15 } }}
+                className="flex items-center justify-between"
+              >
+                <span className="text-sm font-medium text-foreground w-24">
+                  {dayData.day}
+                </span>
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="flex-1 bg-muted/30 rounded-full h-3">
+                    <div
+                      className={`h-3 rounded-full transition-all ${
+                        index === 0 ? 'bg-gold' : 
+                        index === 1 ? 'bg-gold/80' : 
+                        index === 2 ? 'bg-gold/60' : 
+                        'bg-gold/40'
+                      }`}
+                      style={{ 
+                        width: `${dayData.percentage}%` 
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 w-24 justify-end">
+                    <span className="text-sm font-semibold text-foreground">
+                      {dayData.count} citas
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({dayData.percentage}%)
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <Calendar className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm font-medium text-muted-foreground">
+                No hay citas registradas aún
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Las tendencias aparecerán cuando se agenden citas
+              </p>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

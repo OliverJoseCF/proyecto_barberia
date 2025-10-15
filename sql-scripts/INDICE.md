@@ -12,6 +12,13 @@ sql-scripts/
 ├── enable-realtime.sql                # Configuración de Realtime
 ├── supabase-schema.sql                # Esquema completo de BD
 │
+├── mejoras/                           # 🆕 SCRIPTS DE MEJORAS
+│   ├── README.md                      # Documentación de mejoras
+│   ├── 01-constraint-unicidad.sql    # Previene dobles reservas
+│   ├── 02-seguridad-rls.sql          # Mejora seguridad
+│   ├── 03-auditoria.sql              # Sistema de auditoría
+│   └── 04-optimizacion-rendimiento.sql # Optimización
+│
 ├── mantenimiento/                     # Scripts de mantenimiento
 │   ├── limpiar-citas-antiguas.sql    # Eliminar citas viejas
 │   ├── actualizar-estados.sql         # Cambiar estados masivamente
@@ -27,6 +34,95 @@ sql-scripts/
     ├── backup-citas.sql              # Respaldo de citas
     └── backup-servicios.sql          # Respaldo de servicios
 ```
+
+---
+
+## 🆕 MEJORAS (NUEVO)
+
+### 📄 `01-constraint-unicidad.sql` ⚡ CRÍTICO
+**Qué hace:** Previene que dos citas se reserven al mismo tiempo para el mismo barbero
+
+**Cuándo usar:**
+- ✅ Inmediatamente antes de ir a producción
+- ✅ Si detectas dobles reservas
+
+**Beneficios:**
+- Protección automática contra duplicados
+- Previene condiciones de carrera
+- Índices optimizados para consultas
+
+**Precauciones:**
+- ⚠️ Verifica que no haya duplicados antes de ejecutar
+- ✅ Primera mejora a ejecutar
+
+---
+
+### 📄 `02-seguridad-rls.sql` 🔒 ALTA PRIORIDAD
+**Qué hace:** Mejora políticas de seguridad y añade sistema de tokens
+
+**Cuándo usar:**
+- ✅ Después del script 01
+- ✅ Antes de abrir al público
+
+**Beneficios:**
+- Solo usuarios autenticados pueden modificar citas
+- Sistema de tokens para reprogramación segura
+- Protección contra modificaciones maliciosas
+
+**Funciones nuevas:**
+- `generar_token_reprogramacion(cita_id)`
+- `validar_token_reprogramacion(token)`
+- `marcar_token_usado(token)`
+
+---
+
+### 📄 `03-auditoria.sql` 📊 MEDIA PRIORIDAD
+**Qué hace:** Registra automáticamente todos los cambios en citas
+
+**Cuándo usar:**
+- ✅ Después del script 02
+- ✅ Si necesitas rastrear cambios
+
+**Beneficios:**
+- Historial completo de cambios
+- Análisis de cancelaciones
+- Rastreo de reprogramaciones
+- Reportes de comportamiento
+
+**Vistas creadas:**
+- `historial_cita` - Ver cambios por cita
+- `estadisticas_auditoria` - Resumen de cambios
+- `citas_canceladas_auditoria` - Análisis
+- `reprogramaciones_auditoria` - Seguimiento
+
+**Funciones útiles:**
+- `obtener_historial_cita(cita_id)`
+- `cambios_recientes()`
+- `limpiar_auditoria_antigua(dias)`
+
+---
+
+### 📄 `04-optimizacion-rendimiento.sql` 🚀 BAJA PRIORIDAD
+**Qué hace:** Optimiza consultas y añade funciones PostgreSQL rápidas
+
+**Cuándo usar:**
+- ✅ Después del script 03
+- ✅ Si notas lentitud
+- ✅ Cuando tengas >1000 citas
+
+**Beneficios:**
+- Consultas 10x más rápidas
+- Índices compuestos optimizados
+- Vistas materializadas para reportes
+- Funciones PostgreSQL nativas
+
+**Funciones optimizadas:**
+- `verificar_disponibilidad_optimizada(fecha, hora, barbero)`
+- `horarios_disponibles(fecha, barbero)`
+- `estadisticas_barbero(barbero, desde, hasta)`
+- `citas_proximas(dias, limite)`
+- `refrescar_estadisticas()`
+- `optimizar_tablas()`
 
 ---
 
