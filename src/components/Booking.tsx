@@ -11,11 +11,11 @@ import { useAvailability } from "@/hooks/use-availability";
 import { useCitas } from "@/hooks/use-citas";
 import { useBarberos } from "@/hooks/use-barberos";
 import { useServicios } from "@/hooks/use-servicios";
-import { HORARIOS } from "@/constants/bookingOptions";
 import DotGrid from "./DotGrid";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { z } from "zod";
+import { obtenerFechaHoyLocal } from "@/lib/dateUtils";
 
 
 const Booking = () => {
@@ -47,6 +47,22 @@ const Booking = () => {
       localStorage.removeItem("servicioSeleccionado");
     }
   }, []);
+
+  // Validar que el servicio seleccionado aún existe y está activo
+  useEffect(() => {
+    if (formData.servicio && !loadingServicios) {
+      const servicioExiste = servicios.some(s => s.nombre === formData.servicio);
+      if (!servicioExiste) {
+        console.warn('⚠️ Servicio seleccionado ya no está disponible');
+        toast({
+          title: "Servicio no disponible",
+          description: "El servicio que seleccionaste ya no está disponible. Por favor, elige otro.",
+          variant: "destructive"
+        });
+        setFormData(prev => ({ ...prev, servicio: "" }));
+      }
+    }
+  }, [servicios, formData.servicio, loadingServicios, toast]);
 
   // Efecto adicional para verificar cambios en localStorage cuando la sección está visible
   useEffect(() => {
@@ -98,9 +114,8 @@ const Booking = () => {
     fecha: z.string()
       .min(1, 'La fecha es obligatoria')
       .refine((date) => {
-        // Comparar fechas como strings en formato YYYY-MM-DD (sin zona horaria)
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
+        // Comparar fechas como strings en formato YYYY-MM-DD usando zona horaria local
+        const todayStr = obtenerFechaHoyLocal();
         return date >= todayStr;
       }, 'La fecha no puede ser anterior a hoy'),
     hora: z.string().min(1, 'La hora es obligatoria'),
@@ -336,8 +351,16 @@ const Booking = () => {
                     id="fecha"
                     type="date"
                     value={formData.fecha}
-                    min={new Date().toISOString().split('T')[0]}
-                    max={new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} // Máximo 90 días adelante
+                    min={obtenerFechaHoyLocal()}
+                    max={(() => {
+                      // Calcular fecha máxima (90 días adelante) en zona horaria local
+                      const hoy = new Date();
+                      const maxFecha = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 90);
+                      const año = maxFecha.getFullYear();
+                      const mes = String(maxFecha.getMonth() + 1).padStart(2, '0');
+                      const dia = String(maxFecha.getDate()).padStart(2, '0');
+                      return `${año}-${mes}-${dia}`;
+                    })()}
                     aria-invalid={!!errors.fecha}
                     aria-describedby="error-fecha"
                     onChange={(e) => setFormData({...formData, fecha: e.target.value})}
@@ -360,24 +383,29 @@ const Booking = () => {
                       <SelectValue placeholder={
                         loadingAvailability ? "Verificando disponibilidad..." :
                         !formData.fecha || !formData.barbero ? "Selecciona fecha y barbero primero" :
+                        availabilityData?.horarios.length === 0 ? "No hay horarios disponibles" :
                         "Selecciona una hora"
                       } />
                     </SelectTrigger>
                     <SelectContent>
-                      {availabilityData?.horarios.map((slot) => (
-                        <SelectItem 
-                          key={slot.hora} 
-                          value={slot.hora} 
-                          disabled={!slot.disponible}
-                          className={`font-elegant ${!slot.disponible ? 'opacity-50 line-through' : ''}`}
-                        >
-                          {slot.hora} {!slot.disponible && '(Ocupado)'}
+                      {availabilityData?.horarios && availabilityData.horarios.length > 0 ? (
+                        availabilityData.horarios.map((slot) => (
+                          <SelectItem 
+                            key={slot.hora} 
+                            value={slot.hora} 
+                            disabled={!slot.disponible}
+                            className={`font-elegant ${!slot.disponible ? 'opacity-50 line-through' : ''}`}
+                          >
+                            {slot.hora} {!slot.disponible && '(Ocupado)'}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-disponible" disabled className="font-elegant text-muted-foreground">
+                          {!formData.fecha || !formData.barbero 
+                            ? 'Selecciona fecha y barbero primero'
+                            : 'No hay horarios disponibles para este día'}
                         </SelectItem>
-                      )) || HORARIOS.map((hora) => (
-                        <SelectItem key={hora} value={hora} className="font-elegant">
-                          {hora}
-                        </SelectItem>
-                      ))}
+                      )}
                     </SelectContent>
                   </Select>
                   {errors.hora && <span className="text-red-500 text-xs">{errors.hora}</span>}

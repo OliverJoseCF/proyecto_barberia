@@ -38,7 +38,7 @@ interface Servicio {
 
 const ServiceManagement = () => {
   const navigate = useNavigate();
-  const { servicios: serviciosDB, loading: loadingServicios } = useServicios();
+  const { servicios: serviciosDB, loading: loadingServicios } = useServicios(true); // Incluir inactivos en admin
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [filteredServicios, setFilteredServicios] = useState<Servicio[]>([]);
   const [searchTerm, setSearchTerm] = useState('');

@@ -1,48 +1,31 @@
-import gallery1 from "@/assets/corte1.jpg";
-import gallery2 from "@/assets/corte1.jpg";
-import gallery3 from "@/assets/angel.jpg";
 import { Carousel } from "./Carousel";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { useGaleria } from "@/hooks/use-galeria";
+import { Loader2, ImageIcon } from "lucide-react";
+import { useState } from "react";
 
 const Gallery = () => {
-
-
 	const { ref, inView } = useInView({
 		triggerOnce: true,
 		threshold: 0.1,
 	});
 
-	const carouselSlides = [
-		{
-			src: gallery1,
-			title: "Corte Gey",
-			button: "Ver Más Trabajos"
-		},
-		{
-			src: gallery2,
-			title: "Barba Profesional",
-			button: "Reservar Cita"
-		},
-		{
-			src: gallery3,
-			title: "Afeitado Clásico",
-			button: "Conocer Servicios"
-		},
-		{
-			src: gallery1,
-			title: "Estilo Personalizado",
-			button: "Ver Portfolio"
-		},
-		{
-			src: gallery3,
-			title: "Técnicas Avanzadas",
-			button: "Agendar Ahora"
-		}
-		
+	// Solo imágenes activas para la página pública
+	const { imagenes, loading } = useGaleria(false);
+	const [categoriaFiltro, setCategoriaFiltro] = useState<string>('todas');
 
+	// Filtrar imágenes por categoría
+	const imagenesFiltradas = categoriaFiltro === 'todas' 
+		? imagenes 
+		: imagenes.filter(img => img.categoria === categoriaFiltro);
 
-	];
+	// Convertir imágenes a formato del Carousel
+	const carouselSlides = imagenesFiltradas.map(img => ({
+		src: img.imagen_url,
+		title: img.titulo,
+		button: img.categoria ? `Ver más ${img.categoria}` : "Ver Más Trabajos"
+	}));
 
 	return (
 		<section id="galeria" className="py-24 bg-background/85 backdrop-blur-sm" ref={ref}>
@@ -70,7 +53,18 @@ const Gallery = () => {
 					animate={inView ? { opacity: 1, y: 0 } : {}}
 					transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
 				>
-					<Carousel slides={carouselSlides} />
+					{loading ? (
+						<div className="flex justify-center items-center py-20">
+							<Loader2 className="h-8 w-8 animate-spin text-gold" />
+						</div>
+					) : carouselSlides.length === 0 ? (
+						<div className="text-center py-20">
+							<ImageIcon className="h-16 w-16 text-gold/50 mx-auto mb-4" />
+							<p className="text-muted-foreground text-lg">No hay imágenes disponibles en la galería</p>
+						</div>
+					) : (
+						<Carousel slides={carouselSlides} />
+					)}
 				</motion.div>
 
 				<motion.div 

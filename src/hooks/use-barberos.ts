@@ -8,6 +8,12 @@ export interface Barbero {
   activo: boolean;
   telefono?: string;
   email?: string;
+  foto_url?: string;
+  biografia?: string;
+  horario_preferido?: string;
+  orden?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export function useBarberos() {

@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Scissors, Sparkles, Zap, Palette, Star, Eye, ShoppingBag, Heart } from "lucide-react";
+import { Scissors, Sparkles, Zap, Palette, Star, Eye, ShoppingBag, Heart, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { useServicios } from "@/hooks/use-servicios";
 
 const Services = () => {
   const { ref, inView } = useInView({
@@ -10,80 +11,26 @@ const Services = () => {
     threshold: 0.1,
   });
 
-  const services = [
-    {
-      icon: <Scissors className="h-8 w-8" />,
-      name: "Corte de Cabello",
-      subtitle: "Hombre y Niño",
-      price: "$25 - $35",
-      duration: "45-60 min",
-      description: "Cortes modernos y clásicos adaptados a tu estilo personal",
-      serviceValue: "Corte de Cabello (Hombre)"
-    },
-    {
-      icon: <Sparkles className="h-8 w-8" />,
-      name: "Arreglo de Barba",
-      subtitle: "Perfilado Profesional",
-      price: "$20",
-      duration: "30 min",
-      description: "Definición y estilizado de barba con técnicas profesionales",
-      serviceValue: "Arreglo de Barba"
-    },
-    {
-      icon: <Zap className="h-8 w-8" />,
-      name: "Afeitado Clásico",
-      subtitle: "Navaja Tradicional",
-      price: "$30",
-      duration: "45 min",
-      description: "Experiencia tradicional con navaja, toallas calientes y acabado perfecto",
-      serviceValue: "Afeitado Clásico"
-    },
-    {
-      icon: <Palette className="h-8 w-8" />,
-      name: "Tintes",
-      subtitle: "Color Profesional",
-      price: "$40 - $60",
-      duration: "90 min",
-      description: "Coloración profesional con productos de alta calidad",
-      serviceValue: "Tintes"
-    },
-    {
-      icon: <Star className="h-8 w-8" />,
-      name: "Diseños Capilares",
-      subtitle: "Arte Personalizado",
-      price: "$35",
-      duration: "60 min",
-      description: "Diseños únicos y personalizados para expresar tu personalidad",
-      serviceValue: "Diseños Capilares"
-    },
-    {
-      icon: <Eye className="h-8 w-8" />,
-      name: "Tratamientos Barba y Cejas",
-      subtitle: "Cuidado Completo",
-      price: "$25",
-      duration: "30 min",
-      description: "Tratamientos especializados para barba y perfilado de cejas",
-      serviceValue: "Tratamientos Barba y Cejas"
-    },
-    {
-      icon: <ShoppingBag className="h-8 w-8" />,
-      name: "Productos de Cuidado",
-      subtitle: "Línea Premium",
-      price: "Variable",
-      duration: "-",
-      description: "Productos profesionales para el cuidado en casa",
-      serviceValue: "Productos de Cuidado"
-    },
-    {
-      icon: <Heart className="h-8 w-8" />,
-      name: "Faciales y Skincare",
-      subtitle: "Cuidado Facial",
-      price: "$45",
-      duration: "60 min",
-      description: "Faciales, mascarillas y exfoliaciones para el cuidado completo de la piel",
-      serviceValue: "Faciales y Skincare"
-    }
-  ];
+  // Usar datos reales de la base de datos (solo servicios activos)
+  const { servicios, loading } = useServicios(false);
+
+  // Mapeo de categorías a iconos
+  const getCategoryIcon = (categoria?: string) => {
+    const iconMap: Record<string, JSX.Element> = {
+      'Cortes': <Scissors className="h-8 w-8" />,
+      'Barba': <Sparkles className="h-8 w-8" />,
+      'Afeitado': <Zap className="h-8 w-8" />,
+      'Tintes': <Palette className="h-8 w-8" />,
+      'Diseños': <Star className="h-8 w-8" />,
+      'Tratamientos': <Eye className="h-8 w-8" />,
+      'Productos': <ShoppingBag className="h-8 w-8" />,
+      'Facial': <Heart className="h-8 w-8" />,
+      'Infantil': <Scissors className="h-8 w-8" />,
+      'Paquetes': <Sparkles className="h-8 w-8" />,
+    };
+    
+    return iconMap[categoria || 'Cortes'] || <Scissors className="h-8 w-8" />;
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -133,52 +80,75 @@ const Services = () => {
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
         >
-          {services.map((service, index) => (
-            <Card key={index} className="glass-effect hover:border-gold/50 hover:glow-soft transition-elegant group bg-card/60 backdrop-blur-md flex flex-col h-full">
-              <CardHeader className="text-center">
-                <div className="mx-auto w-16 h-16 gradient-gold rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-elegant">
-                  <div className="text-gold-foreground">
-                    {service.icon}
-                  </div>
-                </div>
-                <CardTitle className="font-display text-xl text-foreground">
-                  {service.name}
-                </CardTitle>
-                <CardDescription className="font-elegant text-gold italic">
-                  {service.subtitle}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center space-y-3 flex flex-col flex-grow">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="font-elegant text-muted-foreground">Precio:</span>
-                  <span className="font-elegant text-gold font-semibold">{service.price}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="font-elegant text-muted-foreground">Duración:</span>
-                  <span className="font-elegant text-foreground">{service.duration}</span>
-                </div>
-                <p className="font-elegant text-sm text-muted-foreground leading-relaxed mb-4 flex-grow">
-                  {service.description}
-                </p>
-                <Button 
-                  variant="elegant"
-                  className="w-full font-elegant mt-auto"
-                  onClick={() => {
-                    // Guardar el servicio seleccionado en localStorage
-                    localStorage.setItem('servicioSeleccionado', service.serviceValue);
-                    
-                    // Navegar a la sección de reservas
-                    const bookingSection = document.getElementById('reservas');
-                    if (bookingSection) {
-                      bookingSection.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                >
-                  Agendar Servicio
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+          {loading ? (
+            // Loading state
+            <div className="col-span-full flex justify-center items-center py-12">
+              <Loader2 className="h-12 w-12 text-gold animate-spin" />
+              <span className="ml-4 font-elegant text-gold">Cargando servicios...</span>
+            </div>
+          ) : servicios.length === 0 ? (
+            // Empty state
+            <div className="col-span-full text-center py-12">
+              <p className="font-elegant text-xl text-muted-foreground">
+                No hay servicios disponibles en este momento.
+              </p>
+            </div>
+          ) : (
+            // Servicios dinámicos desde la base de datos
+            servicios.map((servicio, index) => (
+              <motion.div
+                key={servicio.id}
+                variants={itemVariants}
+              >
+                <Card className="glass-effect hover:border-gold/50 hover:glow-soft transition-elegant group bg-card/60 backdrop-blur-md flex flex-col h-full">
+                  <CardHeader className="text-center">
+                    <div className="mx-auto w-16 h-16 gradient-gold rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-elegant">
+                      <div className="text-gold-foreground">
+                        {getCategoryIcon(servicio.categoria)}
+                      </div>
+                    </div>
+                    <CardTitle className="font-display text-xl text-foreground">
+                      {servicio.nombre}
+                    </CardTitle>
+                    <CardDescription className="font-elegant text-gold italic">
+                      {servicio.categoria || 'Servicio Premium'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="text-center space-y-3 flex flex-col flex-grow">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-elegant text-muted-foreground">Precio:</span>
+                      <span className="font-elegant text-gold font-semibold">
+                        ${servicio.precio.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-elegant text-muted-foreground">Duración:</span>
+                      <span className="font-elegant text-foreground">{servicio.duracion} min</span>
+                    </div>
+                    <p className="font-elegant text-sm text-muted-foreground leading-relaxed mb-4 flex-grow">
+                      {servicio.descripcion}
+                    </p>
+                    <Button 
+                      variant="elegant"
+                      className="w-full font-elegant mt-auto"
+                      onClick={() => {
+                        // Guardar el servicio seleccionado en localStorage
+                        localStorage.setItem('servicioSeleccionado', servicio.nombre);
+                        
+                        // Navegar a la sección de reservas
+                        const bookingSection = document.getElementById('reservas');
+                        if (bookingSection) {
+                          bookingSection.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                    >
+                      Agendar Servicio
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          )}
         </motion.div>
       </div>
     </section>

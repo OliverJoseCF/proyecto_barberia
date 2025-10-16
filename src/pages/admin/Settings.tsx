@@ -272,33 +272,6 @@ const AdminSettings = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Mensaje de bienvenida */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="mb-8"
-        >
-          <Card className="glass-effect border-gold/20 bg-gradient-to-r from-gold/5 to-transparent">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-full bg-gold/20">
-                  <Info className="h-6 w-6 text-gold" />
-                </div>
-                <div>
-                  <h2 className="font-display text-lg text-gold mb-2">
-                    Bienvenido al Centro de Configuración
-                  </h2>
-                  <p className="font-elegant text-muted-foreground text-sm leading-relaxed">
-                    Desde aquí puedes controlar todos los aspectos de tu barbería sin necesidad de tocar código. 
-                    Cada sección te permite modificar diferentes elementos del sistema de forma intuitiva y segura.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
         {/* Secciones de configuración */}
         <div className="space-y-6">
           {/* Stats Overview */}
@@ -370,12 +343,13 @@ const AdminSettings = () => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ delay: 0.1 * index, duration: 0.3 }}
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                className="h-full"
               >
                 <Card 
-                  className={`glass-effect border-gold/20 cursor-pointer hover:border-gold/40 transition-all duration-300 h-full bg-gradient-to-br ${option.bgColor} hover:shadow-xl hover:shadow-gold/10`}
+                  className={`glass-effect border-gold/20 cursor-pointer hover:border-gold/40 transition-all duration-300 h-full bg-gradient-to-br ${option.bgColor} hover:shadow-xl hover:shadow-gold/10 flex flex-col`}
                   onClick={() => handleCardClick(option.action)}
                 >
-                  <CardHeader className="space-y-4">
+                  <CardHeader className="space-y-4 flex-grow">
                     <div className="flex items-start justify-between">
                       <motion.div 
                         className="p-3 rounded-lg bg-background/50 backdrop-blur-sm"
@@ -399,7 +373,7 @@ const AdminSettings = () => {
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 mt-auto">
                     <div className="flex items-center justify-between text-xs font-elegant text-muted-foreground">
                       <span>{option.category}</span>
                       <ArrowLeft className="h-4 w-4 text-gold rotate-180" />

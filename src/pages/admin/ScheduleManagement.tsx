@@ -13,50 +13,49 @@ import {
   Save,
   Plus,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { useHorarios } from '@/hooks/use-horarios';
 
-interface HorarioSemanal {
-  dia: string;
-  activo: boolean;
-  apertura: string;
-  cierre: string;
-  pausaInicio?: string;
-  pausaFin?: string;
-}
-
-interface DiaFestivo {
-  id: string;
-  fecha: string;
-  descripcion: string;
-  recurrente: boolean;
-}
+const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 const ScheduleManagement = () => {
   const navigate = useNavigate();
+  const {
+    horarios,
+    diasFestivos,
+    configuracion,
+    loading: loadingHorarios,
+    actualizarHorario,
+    agregarDiaFestivo,
+    eliminarDiaFestivo,
+    actualizarConfiguracion
+  } = useHorarios();
+
   const [loading, setLoading] = useState(false);
-  const [intervaloMinutos, setIntervaloMinutos] = useState(30);
-  const [anticipacionMinima, setAnticipacionMinima] = useState(2); // horas
-  const [diasFestivos, setDiasFestivos] = useState<DiaFestivo[]>([]);
   const [nuevaFecha, setNuevaFecha] = useState('');
   const [nuevaDescripcion, setNuevaDescripcion] = useState('');
-  
-  const [horarios, setHorarios] = useState<HorarioSemanal[]>([
-    { dia: 'Lunes', activo: true, apertura: '09:00', cierre: '19:00' },
-    { dia: 'Martes', activo: true, apertura: '09:00', cierre: '19:00' },
-    { dia: 'Miércoles', activo: true, apertura: '09:00', cierre: '19:00' },
-    { dia: 'Jueves', activo: true, apertura: '09:00', cierre: '19:00' },
-    { dia: 'Viernes', activo: true, apertura: '09:00', cierre: '20:00' },
-    { dia: 'Sábado', activo: true, apertura: '09:00', cierre: '18:00' },
-    { dia: 'Domingo', activo: false, apertura: '10:00', cierre: '14:00' }
-  ]);
+  const [recurrente, setRecurrente] = useState(false);
+
+  // Estado local para configuración
+  const [intervaloMinutos, setIntervaloMinutos] = useState(30);
+  const [anticipacionMinima, setAnticipacionMinima] = useState(2);
+  const [anticipacionMaxima, setAnticipacionMaxima] = useState(30);
 
   useEffect(() => {
     checkSession();
-    cargarConfiguracion();
   }, []);
+
+  // Sincronizar estado local con configuración del hook
+  useEffect(() => {
+    if (configuracion) {
+      setIntervaloMinutos(configuracion.intervalo_citas_minutos);
+      setAnticipacionMinima(configuracion.anticipacion_minima_horas);
+      setAnticipacionMaxima(configuracion.anticipacion_maxima_dias);
+    }
+  }, [configuracion]);
 
   const checkSession = () => {
     const userDataString = localStorage.getItem('cantabarba_user');
@@ -73,68 +72,136 @@ const ScheduleManagement = () => {
     }
   };
 
-  const cargarConfiguracion = async () => {
+  const handleToggleDia = async (horarioId: string, currentState: boolean) => {
     try {
-      // Aquí cargaríamos la configuración desde la base de datos
-      // Por ahora usamos valores por defecto
-      console.log('Cargando configuración de horarios...');
+      setLoading(true);
+      await actualizarHorario(horarioId, { activo: !currentState });
+      toast.success(`Día ${!currentState ? 'activado' : 'desactivado'}`);
     } catch (error) {
-      console.error('Error al cargar configuración:', error);
+      toast.error('Error al actualizar el horario');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleToggleDia = (index: number) => {
-    setHorarios(prev => prev.map((h, i) => 
-      i === index ? { ...h, activo: !h.activo } : h
-    ));
+  const handleHorarioChange = async (horarioId: string, field: string, value: string) => {
+    try {
+      // Asegurar formato correcto para campos de tiempo
+      let formattedValue = value;
+      if (['hora_apertura', 'hora_cierre', 'pausa_inicio', 'pausa_fin'].includes(field)) {
+        // Si el valor no incluye segundos, agregarlos
+        formattedValue = value.includes(':') && value.split(':').length === 2 
+          ? `${value}:00` 
+          : value;
+      }
+
+      // VALIDACIÓN: Si cambia apertura o cierre, verificar que cierre > apertura
+      if (field === 'hora_apertura' || field === 'hora_cierre') {
+        const horario = horarios.find(h => h.id === horarioId);
+        if (horario) {
+          // Obtener valores actuales y nuevos
+          const aperturaActual = field === 'hora_apertura' ? value : horario.hora_apertura.substring(0, 5);
+          const cierreActual = field === 'hora_cierre' ? value : horario.hora_cierre.substring(0, 5);
+          
+          // Convertir a minutos para comparar
+          const [hA, mA] = aperturaActual.split(':').map(Number);
+          const [hC, mC] = cierreActual.split(':').map(Number);
+          const minApertura = hA * 60 + mA;
+          const minCierre = hC * 60 + mC;
+
+          if (minCierre <= minApertura) {
+            toast.error('La hora de cierre debe ser posterior a la hora de apertura');
+            return;
+          }
+        }
+      }
+
+      // VALIDACIÓN: Si cambia pausas, verificar que pausa_fin > pausa_inicio
+      if (field === 'pausa_inicio' || field === 'pausa_fin') {
+        const horario = horarios.find(h => h.id === horarioId);
+        if (horario && value) {
+          const pausaInicioActual = field === 'pausa_inicio' ? value : horario.pausa_inicio?.substring(0, 5);
+          const pausaFinActual = field === 'pausa_fin' ? value : horario.pausa_fin?.substring(0, 5);
+          
+          if (pausaInicioActual && pausaFinActual) {
+            const [hPI, mPI] = pausaInicioActual.split(':').map(Number);
+            const [hPF, mPF] = pausaFinActual.split(':').map(Number);
+            const minPI = hPI * 60 + mPI;
+            const minPF = hPF * 60 + mPF;
+
+            if (minPF <= minPI) {
+              toast.error('La hora de fin de pausa debe ser posterior al inicio');
+              return;
+            }
+          }
+        }
+      }
+      
+      await actualizarHorario(horarioId, { [field]: formattedValue });
+      toast.success('Horario actualizado', { duration: 1000 });
+    } catch (error) {
+      console.error('Error al actualizar:', error);
+      toast.error('Error al actualizar el horario');
+    }
   };
 
-  const handleHorarioChange = (index: number, field: keyof HorarioSemanal, value: string) => {
-    setHorarios(prev => prev.map((h, i) => 
-      i === index ? { ...h, [field]: value } : h
-    ));
+  const handleLimpiarPausa = async (horarioId: string) => {
+    try {
+      await actualizarHorario(horarioId, { 
+        pausa_inicio: null, 
+        pausa_fin: null 
+      });
+      toast.success('Pausa eliminada', { duration: 1000 });
+    } catch (error) {
+      console.error('Error al limpiar pausa:', error);
+      toast.error('Error al eliminar la pausa');
+    }
   };
 
-  const agregarDiaFestivo = () => {
+  const handleAgregarFestivo = async () => {
     if (!nuevaFecha) {
       toast.error('Por favor selecciona una fecha');
       return;
     }
 
-    const nuevo: DiaFestivo = {
-      id: Date.now().toString(),
-      fecha: nuevaFecha,
-      descripcion: nuevaDescripcion || 'Día festivo',
-      recurrente: false
-    };
-
-    setDiasFestivos(prev => [...prev, nuevo]);
-    setNuevaFecha('');
-    setNuevaDescripcion('');
-    toast.success('Día festivo agregado');
+    try {
+      setLoading(true);
+      await agregarDiaFestivo({
+        fecha: nuevaFecha,
+        descripcion: nuevaDescripcion || 'Día festivo',
+        recurrente
+      });
+      
+      setNuevaFecha('');
+      setNuevaDescripcion('');
+      setRecurrente(false);
+      toast.success('Día festivo agregado');
+    } catch (error) {
+      toast.error('Error al agregar día festivo');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const eliminarDiaFestivo = (id: string) => {
-    setDiasFestivos(prev => prev.filter(d => d.id !== id));
-    toast.success('Día festivo eliminado');
+  const handleEliminarFestivo = async (id: string) => {
+    try {
+      setLoading(true);
+      await eliminarDiaFestivo(id);
+      toast.success('Día festivo eliminado');
+    } catch (error) {
+      toast.error('Error al eliminar día festivo');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const guardarConfiguracion = async () => {
+  const handleGuardarConfiguracion = async () => {
     try {
       setLoading(true);
       
-      // Aquí guardaríamos en la base de datos
-      const configuracion = {
-        horarios,
-        intervaloMinutos,
-        anticipacionMinima,
-        diasFestivos
-      };
-
-      console.log('Guardando configuración:', configuracion);
-      
-      // Simulamos un guardado
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await actualizarConfiguracion('intervalo_citas_minutos', intervaloMinutos.toString());
+      await actualizarConfiguracion('anticipacion_minima_horas', anticipacionMinima.toString());
+      await actualizarConfiguracion('anticipacion_maxima_dias', anticipacionMaxima.toString());
       
       toast.success('Configuración guardada correctamente');
     } catch (error: any) {
@@ -190,7 +257,7 @@ const ScheduleManagement = () => {
 
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
-                onClick={guardarConfiguracion}
+                onClick={handleGuardarConfiguracion}
                 disabled={loading}
                 className="gradient-gold text-gold-foreground hover:opacity-90 font-elegant"
               >
@@ -224,7 +291,7 @@ const ScheduleManagement = () => {
               <CardContent className="space-y-4">
                 {horarios.map((horario, index) => (
                   <motion.div
-                    key={horario.dia}
+                    key={horario.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 + (index * 0.05), duration: 0.3 }}
@@ -240,13 +307,13 @@ const ScheduleManagement = () => {
                         <input
                           type="checkbox"
                           checked={horario.activo}
-                          onChange={() => handleToggleDia(index)}
+                          onChange={() => handleToggleDia(horario.id, horario.activo)}
                           className="w-4 h-4 rounded border-gold/30 text-gold"
                         />
                         <span className={`font-display ${
                           horario.activo ? 'text-gold' : 'text-muted-foreground'
                         }`}>
-                          {horario.dia}
+                          {DIAS_SEMANA[horario.dia_semana]}
                         </span>
                       </div>
 
@@ -258,8 +325,8 @@ const ScheduleManagement = () => {
                             </Label>
                             <Input
                               type="time"
-                              value={horario.apertura}
-                              onChange={(e) => handleHorarioChange(index, 'apertura', e.target.value)}
+                              value={horario.hora_apertura.substring(0, 5)}
+                              onChange={(e) => handleHorarioChange(horario.id, 'hora_apertura', e.target.value)}
                               className="font-elegant"
                             />
                           </div>
@@ -270,8 +337,8 @@ const ScheduleManagement = () => {
                             </Label>
                             <Input
                               type="time"
-                              value={horario.cierre}
-                              onChange={(e) => handleHorarioChange(index, 'cierre', e.target.value)}
+                              value={horario.hora_cierre.substring(0, 5)}
+                              onChange={(e) => handleHorarioChange(horario.id, 'hora_cierre', e.target.value)}
                               className="font-elegant"
                             />
                           </div>
@@ -281,15 +348,15 @@ const ScheduleManagement = () => {
 
                     {horario.activo && (
                       <div className="mt-3 pt-3 border-t border-gold/10">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
                           <div className="flex items-center gap-2 flex-1">
                             <Label className="font-elegant text-xs text-muted-foreground w-20">
                               Pausa inicio
                             </Label>
                             <Input
                               type="time"
-                              value={horario.pausaInicio || ''}
-                              onChange={(e) => handleHorarioChange(index, 'pausaInicio', e.target.value)}
+                              value={horario.pausa_inicio?.substring(0, 5) || ''}
+                              onChange={(e) => handleHorarioChange(horario.id, 'pausa_inicio', e.target.value)}
                               className="font-elegant"
                               placeholder="Opcional"
                             />
@@ -301,12 +368,30 @@ const ScheduleManagement = () => {
                             </Label>
                             <Input
                               type="time"
-                              value={horario.pausaFin || ''}
-                              onChange={(e) => handleHorarioChange(index, 'pausaFin', e.target.value)}
+                              value={horario.pausa_fin?.substring(0, 5) || ''}
+                              onChange={(e) => handleHorarioChange(horario.id, 'pausa_fin', e.target.value)}
                               className="font-elegant"
                               placeholder="Opcional"
                             />
                           </div>
+
+                          {(horario.pausa_inicio || horario.pausa_fin) && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.8 }}
+                            >
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleLimpiarPausa(horario.id)}
+                                className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                title="Quitar pausa"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -365,6 +450,22 @@ const ScheduleManagement = () => {
                     Tiempo mínimo con el que se puede agendar
                   </p>
                 </div>
+
+                <div className="space-y-2">
+                  <Label className="font-elegant">
+                    Anticipación máxima (días)
+                  </Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={anticipacionMaxima}
+                    onChange={(e) => setAnticipacionMaxima(Number(e.target.value))}
+                    className="font-elegant"
+                  />
+                  <p className="text-xs text-muted-foreground font-elegant">
+                    Días máximos con los que se puede agendar por adelantado
+                  </p>
+                </div>
               </CardContent>
             </Card>
             </motion.div>
@@ -411,7 +512,7 @@ const ScheduleManagement = () => {
           <CardContent>
             <div className="space-y-6">
               {/* Formulario para agregar */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-lg bg-muted/20 border border-gold/10">
+              <div className="grid grid-cols-1 md:grid-3 gap-4 p-4 rounded-lg bg-muted/20 border border-gold/10">
                 <div className="space-y-2">
                   <Label className="font-elegant">Fecha</Label>
                   <Input
@@ -433,11 +534,24 @@ const ScheduleManagement = () => {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label className="font-elegant flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={recurrente}
+                      onChange={(e) => setRecurrente(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    Recurrente (cada año)
+                  </Label>
+                </div>
+
                 <div className="flex items-end">
                   <motion.div className="w-full" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Button
-                      onClick={agregarDiaFestivo}
+                      onClick={handleAgregarFestivo}
                       className="w-full gradient-gold text-gold-foreground font-elegant"
+                      disabled={loading}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Agregar
@@ -468,13 +582,20 @@ const ScheduleManagement = () => {
                       <div className="flex items-center gap-4">
                         <Calendar className="h-5 w-5 text-gold" />
                         <div>
-                          <p className="font-display text-gold">
-                            {new Date(dia.fecha + 'T00:00:00').toLocaleDateString('es-MX', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric'
-                            })}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-display text-gold">
+                              {new Date(dia.fecha + 'T00:00:00').toLocaleDateString('es-MX', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                              })}
+                            </p>
+                            {dia.recurrente && (
+                              <span className="px-2 py-0.5 rounded-full text-xs bg-blue-500/20 text-blue-500 font-elegant">
+                                Anual
+                              </span>
+                            )}
+                          </div>
                           <p className="font-elegant text-sm text-muted-foreground">
                             {dia.descripcion}
                           </p>
@@ -484,8 +605,9 @@ const ScheduleManagement = () => {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => eliminarDiaFestivo(dia.id)}
-                        className="text-red-500 hover:bg-red-500/10"
+                        onClick={() => handleEliminarFestivo(dia.id)}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                        disabled={loading}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
